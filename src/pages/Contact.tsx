@@ -89,10 +89,10 @@ const Contact: React.FC = () => {
 
   const formVariants = {
     hidden: { opacity: 0, x: 20 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       x: 0,
-      transition: { 
+      transition: {
         type: 'spring',
         stiffness: 100,
         damping: 15
@@ -102,10 +102,10 @@ const Contact: React.FC = () => {
 
   const infoVariants = {
     hidden: { opacity: 0, x: -20 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       x: 0,
-      transition: { 
+      transition: {
         type: 'spring',
         stiffness: 100,
         damping: 15
@@ -114,16 +114,16 @@ const Contact: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50">
       <Navbar />
-      
+
       {/* Hero Section */}
       <div className="relative h-[400px] bg-cover bg-center"
         style={{
           backgroundImage: 'url(https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80)'
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 to-transparent">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-transparent">
           <div className="container mx-auto px-6 h-full flex items-center">
             <div className="max-w-2xl text-white">
               <h1 className="text-5xl font-light mb-6">Contact Us</h1>
@@ -145,19 +145,21 @@ const Contact: React.FC = () => {
               initial="hidden"
               animate="visible"
             >
-              <h2 className="text-3xl font-light text-purple-900 mb-8">Get in Touch</h2>
+              <h2 className="text-3xl font-light text-blue-900 mb-8">Get in Touch</h2>
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-semibold text-purple-900 mb-2">Office Location</h3>
-                  <p className="text-gray-600"><p className="font-semibold text-black">Registered Office</p>SSH, Gokul Plot 84 & 85, Near Prajay Megapolis, KPHB 9th Phase, Hyderabad,Telangana,INDIA 500085<br/><p className="font-semibold text-black">Development Office</p>Flat No : 202 SM Reddy Complex, Capital Pk Rd,Cyber Hills Colony, VIP Hills, Jaihind Enclave, Madhapur,
-Hyderabad, Telangana 500081</p>
+                  <h3 className="text-xl font-semibold text-blue-900 mb-2">Office Location</h3>
+                  <p className="text-gray-600"><p className="font-semibold text-black">Registered Office</p>Unit G3, Plot No:39.40 & 41,
+                    Sree Sai Hills, Gokul Plots,
+                    Hafeezpet, KPHB Phase 13 road, KPHB Colony,
+                    Hyderabad- 500085, Telangana State.</p>
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-purple-900 mb-2">Contact Info</h3>
-                  <p className="text-gray-600">Email: info@zerokost.com<br />Phone: +91 7981643250</p>
+                  <h3 className="text-xl font-semibold text-blue-900 mb-2">Contact Info</h3>
+                  <p className="text-gray-600">Email: ashwin@curaquantis.com<br />Phone: +91 7036955133</p>
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-purple-900 mb-2">Business Hours</h3>
+                  <h3 className="text-xl font-semibold text-blue-900 mb-2">Business Hours</h3>
                   <p className="text-gray-600">Monday - Friday: 9:00 AM - 6:00 PM<br />Weekend: Closed</p>
                 </div>
               </div>
@@ -179,7 +181,7 @@ Hyderabad, Telangana 500081</p>
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -191,7 +193,7 @@ Hyderabad, Telangana 500081</p>
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -203,7 +205,7 @@ Hyderabad, Telangana 500081</p>
                     value={formData.subject}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -215,7 +217,7 @@ Hyderabad, Telangana 500081</p>
                     onChange={handleChange}
                     required
                     rows={4}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 {formData.location && (
@@ -226,13 +228,13 @@ Hyderabad, Telangana 500081</p>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors duration-300 disabled:opacity-50"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-300 disabled:opacity-50"
                 >
                   {loading ? 'Sending...' : 'Send Message'}
                 </button>
                 <AnimatePresence>
                   {status === 'success' && (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
@@ -242,7 +244,7 @@ Hyderabad, Telangana 500081</p>
                     </motion.div>
                   )}
                   {status === 'error' && (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
@@ -260,19 +262,19 @@ Hyderabad, Telangana 500081</p>
 
       {/* Map Section */}
       <section className="container mx-auto px-6 pb-20">
-  <div className="w-full h-[300px] rounded-xl overflow-hidden shadow-lg">
-  <iframe
-    src="https://maps.google.com/maps?q=17.4483274,78.3861214&hl=es;z=14&output=embed"
-    width="100%"
-    height="100%"
-    style={{ border: 0 }}
-    allowFullScreen=""
-    loading="lazy"
-    referrerPolicy="no-referrer-when-downgrade"
-  />
-</div>
+        <div className="w-full h-[300px] rounded-xl overflow-hidden shadow-lg">
+          <iframe
+            src="https://maps.google.com/maps?q=T-Hub%20Phase%202%20Hyderabad&t=&z=15&ie=UTF8&iwloc=&output=embed"
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            allowFullScreen=""
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
 
-</section>
+      </section>
 
 
       <Footer />

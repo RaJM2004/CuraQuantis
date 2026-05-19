@@ -8,100 +8,160 @@ const Solutions = () => {
 
   const solutions = [
     {
-      id: 'clinical-decision',
-      title: 'Clinical Decision Support',
-      description: 'Advanced clinical decision support system powered by AI for accurate diagnosis and treatment planning.',
+      id: 'mediconnect',
+      title: 'Digital OPD & Teleconsultation (MediConnect)',
+      description: 'A complete outpatient digitization system that intelligently manages bookings, secure consultations, and seamless payments.',
       features: [
-        'AI-Powered Diagnosis',
-        'Treatment Recommendations',
-        'Clinical Guidelines Integration',
-        'Risk Assessment'
-      ],
-      image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80'
-    },
-    {
-      id: 'remote-monitoring',
-      title: 'Remote Patient Monitoring',
-      description: 'Comprehensive remote monitoring solutions for continuous patient care and early intervention.',
-      features: [
-        'Real-time Vital Monitoring',
-        'Alert System',
-        'Patient Data Analytics',
-        'Mobile Health Integration'
+        'Secure Video Consultations',
+        'AI-Assisted Report Summaries',
+        'Multilingual Support',
+        'Intelligent Booking System'
       ],
       image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80'
     },
     {
-      id: 'medical-billing',
-      title: 'Medical Billing & Claims',
-      description: 'Streamlined medical billing and claims processing system for healthcare providers.',
+      id: 'prescription-ai',
+      title: 'Voice-Driven Prescription Intelligence',
+      description: 'Converts doctor-patient conversations into structured prescriptions in real time, reducing documentation time and errors.',
       features: [
-        'Automated Claims Processing',
-        'Revenue Cycle Management',
-        'Insurance Verification',
-        'Payment Processing'
+        'Real-time Transcription',
+        'Structured Medical Records',
+        'Natural Consultation Flow',
+        'Error Minimization'
+      ],
+      image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'patient-navigation',
+      title: 'Real-Time Patient Navigation System',
+      description: 'Guides patients step-by-step through large hospital facilities, directing them to rooms, departments, and doctor locations.',
+      features: [
+        'Indoor Wayfinding',
+        'Real-time Availability Tracking',
+        'Reduced Staff Dependency',
+        'Enhanced Visitor Experience'
+      ],
+      image: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'zerolangt',
+      title: 'Multilingual Communication Engine (ZerolangT)',
+      description: 'Enables seamless, two-way medical communication across languages without the need for human translators.',
+      features: [
+        'Real-time Language Translation',
+        'Medical Terminology Context',
+        'Two-way Dialogue Support',
+        'Accurate Multi-language Consultations'
+      ],
+      image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'happyface',
+      title: 'Treatment Outcome Visualization (HappyFace – Dental AI)',
+      description: 'Provides realistic previews of dental treatment outcomes before procedures begin to build patient confidence.',
+      features: [
+        'Realistic Outcome Previews',
+        'Predictive Visualization',
+        'Improved Treatment Acceptance',
+        'Interactive Patient Consultation'
+      ],
+      image: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'orthoscopic-ai',
+      title: 'Passive Movement Analysis (Orthoscopic AI)',
+      description: 'Detects abnormalities in movement, posture, and gait as patients walk into the clinic for early clinical insights.',
+      features: [
+        'Passive Gait Analysis',
+        'Posture Pattern Recognition',
+        'Abnormality Detection',
+        'Early Warning Indicators'
+      ],
+      image: 'https://images.unsplash.com/photo-1576671081837-49000212a370?auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'insurance-intelligence',
+      title: 'Insurance & Billing Intelligence',
+      description: 'Automates insurance verification, eligibility checks, and cost estimation, completing tasks in minutes.',
+      features: [
+        'Automated Eligibility Checks',
+        'Cost Estimation Engines',
+        'Approval Prediction',
+        'Reduced Manual Coordination'
       ],
       image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80'
     },
     {
-      id: 'lab-integration',
-      title: 'Lab Integration Services',
-      description: 'Seamless integration solutions for laboratory systems and healthcare providers.',
+      id: 'smart-coding',
+      title: 'Smart Medical Coding (CPT Assistance)',
+      description: 'Context-aware code suggestions provide accurate CPT codes during consultation to minimize claim rejections.',
       features: [
-        'Lab Results Management',
-        'Order Processing',
-        'Data Synchronization',
-        'Report Generation'
+        'Context-Aware AI Suggestions',
+        'Reduced Claim Rejections',
+        'Faster Administrative Processing',
+        'Contextual Billing Accuracy'
       ],
-      image: 'https://i.ytimg.com/vi/8CsnFL5ir0Q/maxresdefault.jpg'
+      image: 'https://images.unsplash.com/photo-1551288049-bbbda536339a?auto=format&fit=crop&q=80'
     },
     {
-      id: 'appointment',
-      title: 'Appointment Scheduling System',
-      description: 'Intelligent appointment scheduling system for healthcare facilities.',
+      id: 'core-ai-layer',
+      title: 'Unified Clinical Data Engine (Core AI Layer)',
+      description: 'Centralizes all hospital data — EMR, labs, and vitals — into a single structured layer for real-time intelligence.',
       features: [
-        'Online Booking',
-        'Calendar Management',
-        'Automated Reminders',
-        'Resource Allocation'
+        'Centralized Data Structuring',
+        'EMR & Lab Data Integration',
+        'Real-time Intelligence Feed',
+        'Cross-Module Consistency'
       ],
-      image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80'
+      image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc4b?auto=format&fit=crop&q=80'
     },
     {
-      id: 'ai-chatbot',
-      title: 'AI Chatbot for Patient Queries',
-      description: 'Intelligent chatbot system for handling patient inquiries and support.',
+      id: 'icu-monitoring',
+      title: 'Predictive ICU Monitoring (Early Warning System)',
+      description: 'Continuous risk prediction for critical conditions like sepsis or cardiac events for proactive intervention.',
       features: [
-        'Natural Language Processing',
-        '24/7 Support',
-        'Multi-language Support',
-        'Integration with EHR'
+        'Sepsis Risk Prediction',
+        'Cardiac Event Warning',
+        'Continuous Vital Monitoring',
+        'Proactive Clinical Alerts'
       ],
-      image: 'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?auto=format&fit=crop&q=80'
+      image: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80'
     },
     {
-      id: 'eurva',
-      title: 'Eruvaaka',
-      description: 'Advanced AI-powered solution for translation the magazine articles into indian regional, enhancing accessibility and understanding.',
+      id: 'surgical-ai',
+      title: 'Surgical AI Assistance',
+      description: 'Real-time support inside operation theatres through voice and vision tracking for procedure documentation.',
       features: [
-        'AI Analytics',
-        'Healthcare Automation',
-        'Patient Engagement',
-        'Clinical Workflow'
+        'Real-time OT Procedure Support',
+        'Vision-Based Tracking',
+        'Automated Surgical Documentation',
+        'Voice-Guided Assistance'
       ],
-      image: 'https://eruvaaka.com/wp-content/uploads/2023/10/Eruvaaka-Logo.png'
+      image: 'https://images.unsplash.com/photo-1579154236594-e178f46a482b?auto=format&fit=crop&q=80'
     },
     {
-      id: 'ai-translator',
-      title: 'AI Translator',
-      description: 'Real-time medical language translation powered by artificial intelligence.',
+      id: 'pharmacy-intelligence',
+      title: 'Pharmacy Intelligence System',
+      description: 'Analyzes drug interactions, predicts adherence, and optimizes inventory to improve safety and efficiency.',
       features: [
-        'Medical Terminology Translation',
-        'Multi-language Support',
-        'Real-time Translation',
-        'Context-aware Translation'
+        'Drug Interaction Safety Analysis',
+        'Adherence Pattern Prediction',
+        'Smart Inventory Optimization',
+        'Prescription Fulfillment Efficiency'
       ],
-      image: 'https://softwareaccountant.com/wp-content/uploads/2023/05/Best-AI-Translation-Tools.jpg'
+      image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbbb88?auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'orchestration-layer',
+      title: 'AI Orchestration Layer (Hospital Intelligence Brain)',
+      description: 'Seamlessly integrates all specialized AI modules into a centralized hospital intelligence framework.',
+      features: [
+        'Centralized AI Integration',
+        'Unified System Management',
+        'Intelligent Workflow Orchestration',
+        'Ecosystem-wide Visibility'
+      ],
+      image: 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&q=80'
     }
   ];
 
@@ -118,7 +178,7 @@ const Solutions = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       <Navbar />
-      <div 
+      <div
         className="relative h-[500px] bg-cover bg-center"
         style={{
           backgroundImage: 'url(https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80)'
@@ -139,13 +199,13 @@ const Solutions = () => {
       <main className="container mx-auto px-6 py-20">
         <div className="grid md:grid-cols-2 gap-8">
           {solutions.map((solution) => (
-            <section 
-              key={solution.id} 
+            <section
+              key={solution.id}
               id={solution.id}
               className="scroll-mt-24"
             >
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]">
-                <div 
+                <div
                   className="h-48 bg-cover bg-center"
                   style={{ backgroundImage: `url(${solution.image})` }}
                 />
@@ -154,10 +214,10 @@ const Solutions = () => {
                     {solution.title}
                   </h2>
                   <p className="text-gray-600 mb-6">{solution.description}</p>
-                  
+
                   <div className="space-y-3">
                     {solution.features.map((feature, index) => (
-                      <div 
+                      <div
                         key={index}
                         className="p-4 bg-blue-50 rounded-xl border border-blue-100 hover:border-blue-300 transition-colors duration-300"
                       >

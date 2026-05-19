@@ -59,28 +59,28 @@ const ContactSection = () => {
     {
       icon: Mail,
       title: 'Email Us',
-      value: 'info@zerokost.com',
+      value: 'ashwin@curaquantis.com',
       description: 'Get in touch for AI solutions'
     },
     {
       icon: Phone,
       title: 'Call Us',
-      value: '+91 7981643250',
-      description: '24/7 support available'
+      value: '+91 7036955133',
+      description: 'Available between 9am to 6pm IST'
     },
     {
       icon: MapPin,
       title: 'Visit Us',
-      value: 'Flat No : 202 SM Reddy Complex, Capital Pk Rd,Cyber Hills Colony, VIP Hills, Jaihind Enclave, Madhapur, Hyderabad, Telangana 500081',
+      value: "T-Hub's main facility (Phase 2), Plot No 1/C, Sy No 83/1, Raidurgam Panmaktha, Hyderabad Knowledge City, Serilingampally, Hyderabad, Telangana 500081",
       description: 'Innovation Hub'
     }
   ];
 
   return (
-    <section id="contact" className="py-20 bg-gradient-to-br from-gold-50 to-pink-50">
+    <section id="contact" className="py-20 bg-gradient-to-br from-blue-50 to-cyan-50">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-light mb-6 text-gold-900">
+          <h2 className="text-4xl md:text-5xl font-light mb-6 text-blue-900">
             Get in Touch
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -93,15 +93,15 @@ const ContactSection = () => {
           <div>
             <div className="space-y-6 mb-8">
               {contactInfo.map((info, index) => (
-                <div 
+                <div
                   key={info.title}
                   className="bg-white rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   <div className="flex items-center space-x-4">
-                    <info.icon className="w-12 h-12 text-gold-600" />
+                    <info.icon className="w-12 h-12 text-blue-600" />
                     <div>
                       <h4 className="text-lg font-semibold text-gray-900">{info.title}</h4>
-                      <p className="text-amber-600 font-medium">{info.value}</p>
+                      <p className="text-blue-600 font-medium">{info.value}</p>
                       <p className="text-sm text-gray-500">{info.description}</p>
                     </div>
                   </div>
@@ -111,16 +111,16 @@ const ContactSection = () => {
 
             {/* Map */}
             <div className="w-full h-[300px] rounded-xl overflow-hidden shadow-lg">
-  <iframe
-    src="https://maps.google.com/maps?q=17.4483274,78.3861214&hl=es;z=14&output=embed"
-    width="100%"
-    height="100%"
-    style={{ border: 0 }}
-    allowFullScreen=""
-    loading="lazy"
-    referrerPolicy="no-referrer-when-downgrade"
-  />
-</div>
+              <iframe
+                src="https://maps.google.com/maps?q=T-Hub%20Phase%202%20Hyderabad&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
 
 
           </div>
@@ -138,7 +138,7 @@ const ContactSection = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -150,7 +150,7 @@ const ContactSection = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -162,7 +162,7 @@ const ContactSection = () => {
                   value={formData.subject}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -174,13 +174,13 @@ const ContactSection = () => {
                   onChange={handleInputChange}
                   required
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg transition-colors duration-300 disabled:opacity-50 flex items-center justify-center space-x-2"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-300 disabled:opacity-50 flex items-center justify-center space-x-2"
               >
                 <Send className="w-5 h-5" />
                 <span>{loading ? 'Sending...' : 'Send Message'}</span>

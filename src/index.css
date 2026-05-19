@@ -1,71 +1,72 @@
 
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Golden theme with sky blue accents - elegant and modern design system */
+/* Healthcare Professional Theme - Trust, Cleanliness, and Innovation */
 
 @layer base {
   :root {
-    --background: 48 40% 98%;
-    --foreground: 35 20% 15%;
+    --background: 210 60% 98%;
+    --foreground: 215 45% 15%;
 
-    --card: 48 25% 96%;
-    --card-foreground: 35 20% 15%;
+    --card: 210 60% 99%;
+    --card-foreground: 215 45% 15%;
 
-    --popover: 48 25% 96%;
-    --popover-foreground: 35 20% 15%;
+    --popover: 210 60% 99%;
+    --popover-foreground: 215 45% 15%;
 
-    --primary: 45 93% 47%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 215 100% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 197 71% 85%;
-    --secondary-foreground: 35 20% 15%;
+    --secondary: 190 90% 95%;
+    --secondary-foreground: 215 45% 15%;
 
-    --muted: 48 15% 92%;
-    --muted-foreground: 35 15% 45%;
+    --muted: 210 30% 94%;
+    --muted-foreground: 215 20% 45%;
 
-    --accent: 197 71% 73%;
-    --accent-foreground: 35 20% 15%;
+    --accent: 185 80% 90%;
+    --accent-foreground: 215 45% 15%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 45 25% 88%;
-    --input: 45 15% 90%;
-    --ring: 45 93% 47%;
+    --border: 215 25% 90%;
+    --input: 215 25% 90%;
+    --ring: 215 100% 45%;
 
-    --radius: 0.375rem;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 35 15% 8%;
-    --foreground: 48 40% 98%;
+    --background: 220 50% 5%;
+    --foreground: 210 40% 98%;
 
-    --card: 35 15% 8%;
-    --card-foreground: 48 40% 98%;
+    --card: 220 50% 7%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 35 15% 8%;
-    --popover-foreground: 48 40% 98%;
+    --popover: 220 50% 7%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 45 93% 47%;
-    --primary-foreground: 35 15% 8%;
+    --primary: 215 90% 60%;
+    --primary-foreground: 220 50% 5%;
 
-    --secondary: 197 40% 25%;
-    --secondary-foreground: 48 40% 98%;
+    --secondary: 190 40% 15%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 35 10% 18%;
-    --muted-foreground: 48 20% 63%;
+    --muted: 220 30% 12%;
+    --muted-foreground: 210 20% 65%;
 
-    --accent: 197 60% 35%;
-    --accent-foreground: 48 40% 98%;
+    --accent: 185 40% 20%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 35 10% 18%;
-    --input: 35 10% 18%;
-    --ring: 45 93% 47%;
+    --border: 220 30% 15%;
+    --input: 220 30% 15%;
+    --ring: 215 90% 60%;
   }
 }
 
@@ -75,10 +76,13 @@
   }
 
   body {
-    @apply bg-background text-foreground font-light;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    @apply bg-background text-foreground font-normal;
+    font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     letter-spacing: -0.01em;
-    background: linear-gradient(135deg, hsl(48, 40%, 98%) 0%, hsl(197, 71%, 95%) 100%);
+    background: radial-gradient(circle at top right, hsl(190, 80%, 95%), transparent 40%),
+                radial-gradient(circle at bottom left, hsl(215, 100%, 95%), transparent 40%),
+                hsl(210, 60%, 98%);
+    background-attachment: fixed;
   }
 
   html {
@@ -88,64 +92,58 @@
 
 @layer components {
   .silent-card {
-    @apply bg-gradient-to-br from-white/80 to-amber-50/60 backdrop-blur-sm border border-amber-200/50 rounded-lg shadow-lg shadow-amber-100/20;
+    @apply bg-white/80 backdrop-blur-md border border-blue-100/50 rounded-2xl shadow-xl shadow-blue-900/5;
   }
   
   .minimal-text {
-    @apply text-amber-900/80 leading-relaxed;
+    @apply text-slate-600 leading-relaxed;
   }
   
   .hero-text {
-    @apply text-6xl md:text-8xl font-extralight tracking-tight;
-    background: linear-gradient(135deg, hsl(45, 93%, 47%) 0%, hsl(197, 71%, 60%) 100%);
+    @apply text-5xl md:text-7xl font-bold tracking-tight;
+    background: linear-gradient(135deg, hsl(215, 100%, 40%) 0%, hsl(190, 80%, 45%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   
   .section-heading {
-    @apply text-3xl md:text-5xl font-light tracking-tight;
-    background: linear-gradient(135deg, hsl(45, 93%, 47%) 0%, hsl(197, 71%, 50%) 100%);
+    @apply text-3xl md:text-5xl font-semibold tracking-tight;
+    background: linear-gradient(135deg, hsl(215, 100% , 35%) 0%, hsl(185, 80%, 40%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   
   .subtle-hover {
-    @apply transition-all duration-500 ease-out hover:transform hover:translate-y-[-2px] hover:shadow-xl hover:shadow-amber-200/30;
+    @apply transition-all duration-300 ease-out hover:transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10;
   }
   
   .fade-in {
-    animation: fadeIn 1s ease-out forwards;
+    animation: fadeIn 0.8s ease-out forwards;
     opacity: 0;
   }
   
   .slide-up {
-    animation: slideUp 0.8s ease-out forwards;
+    animation: slideUp 0.6s ease-out forwards;
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(15px);
   }
 
-  .golden-gradient {
-    background: linear-gradient(135deg, hsl(45, 93%, 47%) 0%, hsl(45, 85%, 55%) 50%, hsl(197, 71%, 60%) 100%);
+  .healthcare-gradient {
+    background: linear-gradient(135deg, hsl(215, 100%, 45%) 0%, hsl(190, 80% , 50%) 100%);
   }
 
-  .sky-gradient {
-    background: linear-gradient(135deg, hsl(197, 71%, 85%) 0%, hsl(197, 71%, 73%) 100%);
+  .healthcare-text {
+    @apply text-blue-600;
   }
 
-  .golden-text {
-    background: linear-gradient(135deg, hsl(45, 93%, 47%) 0%, hsl(45, 85%, 55%) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .medical-glass {
+    @apply bg-white/60 backdrop-blur-lg border border-white/20 shadow-lg;
   }
 
-  .sky-text {
-    background: linear-gradient(135deg, hsl(197, 71%, 50%) 0%, hsl(197, 71%, 40%) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .blue-gradient {
+    background: linear-gradient(135deg, hsl(215, 100%, 50%) 0%, hsl(195, 100%, 45%) 100%);
   }
 }
 
@@ -167,26 +165,33 @@
 .stagger-3 { animation-delay: 0.3s; }
 .stagger-4 { animation-delay: 0.4s; }
 
-/* Golden particles animation */
-.golden-particles::before {
+/* Healthcare medical particles/dna-like shapes */
+.healthcare-particles::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: radial-gradient(2px 2px at 20px 30px, hsl(45, 93%, 47%, 0.3), transparent),
-                    radial-gradient(2px 2px at 40px 70px, hsl(197, 71%, 60%, 0.3), transparent),
-                    radial-gradient(1px 1px at 90px 40px, hsl(45, 93%, 47%, 0.4), transparent),
-                    radial-gradient(1px 1px at 130px 80px, hsl(197, 71%, 60%, 0.4), transparent);
+  background-image: radial-gradient(circle at 20px 30px, hsla(215, 100%, 45%, 0.1) 1px, transparent 1px),
+                    radial-gradient(circle at 40px 70px, hsla(190, 80%, 50%, 0.1) 2px, transparent 2px),
+                    radial-gradient(circle at 90px 40px, hsla(215, 100%, 45%, 0.05) 1px, transparent 1px);
   background-repeat: repeat;
-  background-size: 150px 150px;
-  animation: particles 20s linear infinite;
+  background-size: 100px 100px;
+  animation: floating 30s linear infinite;
   pointer-events: none;
 }
 
-@keyframes particles {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  33% { transform: translate(30px, -30px) rotate(120deg); }
-  66% { transform: translate(-20px, 20px) rotate(240deg); }
+@keyframes floating {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(20px, 20px); }
+  100% { transform: translate(0, 0); }
 }
+
+/* Redefine old classes to maintain compatibility but with new theme */
+.golden-gradient { @apply healthcare-gradient; }
+.golden-text { @apply healthcare-text; }
+.sky-gradient { @apply blue-gradient; }
+.sky-text { @apply healthcare-text; }
+.golden-particles { @apply healthcare-particles; }
+

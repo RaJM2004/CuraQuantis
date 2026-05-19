@@ -37,6 +37,8 @@ import Meat from "./pages/industries/Meat";
 import Insurance from "./pages/industries/Insurance";
 import Robots from "./pages/industries/Robots";
 import Drones from "./pages/industries/Drones";
+import DemoCenter from "./pages/DemoCenter";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +47,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/products" element={<Products />} />
@@ -52,6 +55,7 @@ function App() {
             <Route path="/insights" element={<Insights />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/demo-center" element={<DemoCenter />} />
             <Route path="/solutions/remote-monitoring" element={<RemoteMonitoring />} />
             <Route path="/solutions/medical-billing" element={<MedicalBilling />} />
             <Route path="/solutions/lab-integration" element={<LabIntegration />} />

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Heart, DollarSign, Dna, Shield, Lock, Pill, Wheat, ShoppingCart, ChevronDown } from 'lucide-react';
+import { Heart, DollarSign, Dna, Shield, Lock, Pill, Wheat, ShoppingCart, ChevronDown, Building, Bot, Navigation } from 'lucide-react';
 
 interface IndustriesSectionProps {
   onIndustryClick: (path: string) => void;
@@ -18,33 +18,34 @@ const IndustriesSection: React.FC<IndustriesSectionProps> = ({ onIndustryClick }
       path: '/industries/healthcare'
     },
     { 
-      icon: DollarSign, 
-      title: 'Finance', 
-      description: 'Enhancing financial services with algorithmic trading and fraud detection.',
-      subdomains: ['Stock Market', 'Risk Management', 'Fraud Detection'],
-      path: '/industries/finance'
+      icon: Bot, 
+      title: 'Robots', 
+      description: 'Advanced AI control systems for next-generation robotics and automation.',
+      subdomains: ['AI Robotics', 'AI Robot Control'],
+      path: 'https://zerokostrobo.netlify.app/',
+      isExternal: true
     },
-    { 
-      icon: Pill, 
-      title: 'Pharma', 
-      description: 'Optimizing pharmaceutical research and clinical trials.',
-      subdomains: ['QA', 'RA', 'CRM', 'Training'],
-      path: '/industries/pharma'
-    },
-    { 
-      icon: Wheat, 
-      title: 'Agriculture', 
-      description: 'Revolutionizing farming with precision agriculture technologies.',
-      subdomains: ['Plant Disease Prediction', 'Crop Yield Optimization', 'Smart Irrigation'],
-      path: '/industries/agriculture'
-    },
-    { icon: Shield, title: 'Defence', description: 'Strengthening security with AI-driven threat detection systems.', path: '/industries/defence' },
-    { icon: Lock, title: 'Cybersecurity', description: 'Protecting digital assets with intelligent threat detection.', path: '/industries/cyber-security' },
-    { icon: Dna, title: 'Biotech', description: 'Accelerating drug discovery and genetic analysis through advanced AI.', path: '/industries/biotech' },
-    { icon: ShoppingCart, title: 'Retail', description: 'Enhancing customer experience with personalized recommendations.', path: '/industries/retail' }
+    // { 
+    //   icon: Building, 
+    //   title: 'Real Estate', 
+    //   description: 'Revolutionizing real estate with autonomous AI calling agents for lead conversion.',
+    //   subdomains: ['AI Calling Agent'],
+    //   path: '/industries/real-estate'
+    // },
+    // { 
+    //   icon: Navigation, 
+    //   title: 'Drones', 
+    //   description: 'Autonomous drone navigation and real-time analytics for aerial intelligence.',
+    //   subdomains: ['AI Drone Navigation', 'AI Drone Analytics'],
+    //   path: '/industries/drones'
+    // },
   ];
 
   const handleIndustryClick = (industry: any) => {
+    if (industry.isExternal) {
+      window.open(industry.path, '_blank', 'noopener,noreferrer');
+      return;
+    }
     if (industry.path) {
       onIndustryClick(industry.path);
     } else {
@@ -53,7 +54,7 @@ const IndustriesSection: React.FC<IndustriesSectionProps> = ({ onIndustryClick }
   };
 
   return (
-    <section id="industries" className="py-32 bg-gradient-to-br from-sky-50/30 to-amber-50/50 relative">
+    <section id="industries" className="py-32 bg-gradient-to-br from-blue-50/30 to-cyan-50/50 relative">
       <div className="container mx-auto px-6">
         <div className="text-center mb-20">
           <h2 className="section-heading mb-6 slide-up">
@@ -68,11 +69,11 @@ const IndustriesSection: React.FC<IndustriesSectionProps> = ({ onIndustryClick }
           {industries.map((industry, index) => (
             <div 
               key={industry.title}
-              className={`silent-card p-8 subtle-hover slide-up stagger-${(index % 4) + 1} group cursor-pointer border-l-4 border-l-transparent hover:border-l-amber-400 transition-all duration-300`}
+              className={`silent-card p-8 subtle-hover slide-up stagger-${(index % 4) + 1} group cursor-pointer border-l-4 border-l-transparent hover:border-l-blue-600 transition-all duration-300`}
               onClick={() => handleIndustryClick(industry)}
             >
               <div className="flex justify-between items-start mb-6">
-                <industry.icon className="w-8 h-8 text-sky-600 group-hover:text-amber-600 transition-colors duration-300" strokeWidth={1} />
+                <industry.icon className="w-8 h-8 text-blue-600 group-hover:text-blue-500 transition-colors duration-300" strokeWidth={1} />
                 {industry.subdomains && (
                   <ChevronDown 
                     className={`w-5 h-5 transition-transform duration-300 ${expandedIndustry === industry.title ? 'rotate-180' : ''}`} 
@@ -80,7 +81,7 @@ const IndustriesSection: React.FC<IndustriesSectionProps> = ({ onIndustryClick }
                   />
                 )}
               </div>
-              <h3 className="text-xl font-light mb-4 golden-text">{industry.title}</h3>
+              <h3 className="text-xl font-light mb-4 healthcare-text">{industry.title}</h3>
               <p className="minimal-text text-sm leading-relaxed mb-4">{industry.description}</p>
               
               {expandedIndustry === industry.title && industry.subdomains && (
@@ -88,7 +89,7 @@ const IndustriesSection: React.FC<IndustriesSectionProps> = ({ onIndustryClick }
                   {industry.subdomains.map((subdomain) => (
                     <div 
                       key={subdomain}
-                      className="text-sm text-gray-600 hover:text-amber-600 transition-colors duration-300 pl-4 border-l-2 border-transparent hover:border-amber-400"
+                      className="text-sm text-gray-600 hover:text-blue-600 transition-colors duration-300 pl-4 border-l-2 border-transparent hover:border-blue-400"
                     >
                       {subdomain}
                     </div>

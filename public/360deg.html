@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CURA QUANTIS HEALTH CLINICS — 3D AI Clinic Walkthrough</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#000; overflow:hidden; font-family:'Courier New', monospace; }
+#canvas3d { display:block; width:100vw; height:100vh; cursor:crosshair; }
+
+/* HUD */
+#hud { position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; z-index:10; }
+
+#topbar {
+  position:absolute; top:0; left:0; right:0; height:48px;
+  background:linear-gradient(180deg,rgba(0,5,20,0.95),transparent);
+  display:flex; align-items:center; justify-content:space-between; padding:0 20px;
+  pointer-events:all;
+}
+.logo { font-size:14px; font-weight:bold; color:#fff; letter-spacing:0.2em; }
+.logo span { color:#00FFB2; }
+#room-name { font-size:13px; color:#00FFB2; letter-spacing:0.15em; }
+#controls-hint { font-size:10px; color:rgba(100,150,255,0.7); letter-spacing:0.1em; }
+
+/* Crosshair */
+#crosshair {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:24px; height:24px; pointer-events:none;
+}
+#crosshair::before, #crosshair::after {
+  content:''; position:absolute; background:rgba(0,255,178,0.8);
+}
+#crosshair::before { width:16px; height:1px; top:50%; left:50%; transform:translate(-50%,-50%); }
+#crosshair::after  { width:1px; height:16px; top:50%; left:50%; transform:translate(-50%,-50%); }
+#crosshair-dot {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:4px; height:4px; border-radius:50%; background:#00FFB2;
+  transition:transform 0.1s, background 0.1s;
+}
+#crosshair-dot.hover { transform:translate(-50%,-50%) scale(2.5); background:#fff; }
+
+/* Info panel */
+#info-panel {
+  position:absolute; right:20px; top:60px; width:300px;
+  background:rgba(4,10,28,0.95); border:1px solid rgba(0,200,120,0.3);
+  border-radius:10px; padding:16px; opacity:0; transition:opacity 0.3s;
+  pointer-events:all;
+}
+#info-panel.visible { opacity:1; }
+#info-close {
+  position:absolute; top:10px; right:12px; background:none; border:none;
+  color:rgba(100,150,255,0.6); font-size:16px; cursor:pointer;
+  pointer-events:all;
+}
+#info-close:hover { color:#fff; }
+.ip-tag { display:inline-block; padding:2px 8px; border-radius:3px; font-size:9px; margin-bottom:8px; letter-spacing:0.1em; }
+.ip-name { font-size:15px; color:#fff; font-weight:bold; margin-bottom:8px; line-height:1.3; letter-spacing:0.05em; }
+.ip-desc { font-size:11px; color:#7aaccc; line-height:1.6; margin-bottom:8px; }
+.ip-divider { height:1px; background:rgba(0,200,120,0.15); margin:10px 0; }
+.ip-spec { display:flex; justify-content:space-between; font-size:10px; color:#456; margin:4px 0; }
+.ip-spec span:last-child { color:#0fa; }
+
+/* Room selector */
+#room-selector {
+  position:absolute; bottom:0; left:0; right:0; height:56px;
+  background:linear-gradient(0deg,rgba(0,5,20,0.97),transparent);
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  padding-bottom:6px; pointer-events:all;
+}
+.room-btn {
+  background:rgba(10,20,50,0.9); border:1px solid rgba(50,100,200,0.3);
+  border-radius:6px; color:rgba(100,150,255,0.7);
+  font-family:'Courier New', monospace; font-size:9px;
+  padding:6px 10px; cursor:pointer; transition:all 0.15s;
+  letter-spacing:0.08em; white-space:nowrap;
+}
+.room-btn:hover { background:rgba(0,255,178,0.1); border-color:rgba(0,255,178,0.5); color:#0fb; }
+.room-btn.active { background:rgba(0,255,178,0.15); border-color:#0fa; color:#0fa; }
+
+/* Minimap */
+#minimap {
+  position:absolute; top:60px; left:20px; width:160px; height:120px;
+  background:rgba(4,10,28,0.9); border:1px solid rgba(50,100,200,0.25);
+  border-radius:6px; overflow:hidden; pointer-events:none;
+}
+#minimap canvas { width:100%; height:100%; display:block; }
+#minimap-label { position:absolute; bottom:4px; left:6px; font-size:8px; color:rgba(100,150,255,0.5); letter-spacing:0.1em; }
+
+/* Enter prompt */
+#enter-prompt {
+  position:absolute; bottom:120px; left:50%; transform:translateX(-50%);
+  background:rgba(0,255,178,0.12); border:1px solid rgba(0,255,178,0.4);
+  border-radius:6px; padding:8px 18px; font-size:11px; color:#0fa;
+  letter-spacing:0.15em; opacity:0; transition:opacity 0.3s; pointer-events:none;
+}
+#enter-prompt.visible { opacity:1; }
+
+/* Loading */
+#loading {
+  position:fixed; top:0; left:0; right:0; bottom:0;
+  background:#020810; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; z-index:100;
+  transition:opacity 0.8s;
+}
+#loading.done { opacity:0; pointer-events:none; }
+.load-logo { font-size:28px; font-weight:bold; color:#fff; letter-spacing:0.3em; margin-bottom:4px; }
+.load-logo span { color:#00FFB2; }
+.load-sub { font-size:10px; color:rgba(100,150,255,0.6); letter-spacing:0.2em; margin-bottom:32px; }
+.load-bar-wrap { width:200px; height:2px; background:rgba(255,255,255,0.08); border-radius:2px; }
+.load-bar { height:100%; background:#00FFB2; border-radius:2px; width:0; transition:width 0.3s; }
+.load-text { margin-top:12px; font-size:9px; color:rgba(100,150,255,0.5); letter-spacing:0.15em; }
+
+/* Interaction mode */
+#mode-badge {
+  position:absolute; top:56px; left:50%; transform:translateX(-50%);
+  font-size:9px; color:rgba(100,150,255,0.5); letter-spacing:0.12em;
+  background:rgba(0,0,0,0.4); padding:3px 10px; border-radius:20px;
+}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="load-logo">CURA QUANTIS HEALTH <span>CLINICS</span></div>
+  <div class="load-sub">3D AI Clinic WALKTHROUGH</div>
+  <div class="load-bar-wrap"><div class="load-bar" id="load-bar"></div></div>
+  <div class="load-text" id="load-text">INITIALISING SCENE…</div>
+</div>
+
+<canvas id="canvas3d"></canvas>
+
+<div id="hud">
+  <div id="topbar">
+    <div class="logo">CURA QUANTIS HEALTH   <span>CLINICS</span></div>
+    <div id="room-name">AI Clinic ENTRANCE</div>
+    <div id="controls-hint">WASD / ARROWS · MOUSE LOOK · CLICK OBJECTS · ESC EXIT ROOM</div>
+  </div>
+  <div id="crosshair"><div id="crosshair-dot"></div></div>
+  <div id="mode-badge" id="mode-badge">OVERVIEW MODE — CLICK A ROOM TO ENTER</div>
+  <div id="enter-prompt">CLICK TO ENTER ROOM</div>
+
+  <div id="minimap">
+    <canvas id="map-canvas" width="160" height="120"></canvas>
+    <div id="minimap-label">FLOOR PLAN</div>
+  </div>
+
+  <div id="info-panel">
+    <button id="info-close" onclick="closeInfo()">✕</button>
+    <div class="ip-tag" id="ip-tag">TAG</div>
+    <div class="ip-name" id="ip-name">System Name</div>
+    <div class="ip-desc" id="ip-desc">Description</div>
+    <div class="ip-divider"></div>
+    <div class="ip-spec"><span>STATUS</span><span>● ACTIVE</span></div>
+    <div class="ip-spec" id="ip-type-row"><span>TYPE</span><span id="ip-type">—</span></div>
+    <div class="ip-spec" id="ip-zone-row"><span>ZONE</span><span id="ip-zone">—</span></div>
+  </div>
+
+  <div id="room-selector"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ═══════════════════════════ ROOM DATA ═══════════════════════════ */
+const ROOMS = [
+  {
+    id:0, name:'ENTRANCE CORRIDOR', short:'Entrance',
+    color:0x3A8FFF, colorHex:'#3A8FFF', floorColor:0x0a1828, wallColor:0x0d1e30, zone:'A',
+    position: new THREE.Vector3(-14, 0, 0),
+    size: { w:8, h:4, d:16 },
+    desc:'Main hospital entrance — orthoscopic cameras scan patient gait as they walk in.',
+    items:[
+      { name:'Orthoscopic Camera Array', tag:'HARDWARE + AI', color:0x3A8FFF,
+        pos:[0,3.2,4], shape:'camera',
+        desc:'Ceiling-mounted cameras capture patient gait and posture. AI flags joint, limb, and posture anomalies before consultation begins.',
+        type:'Vision AI Hardware' },
+      { name:'Entry Door System', tag:'SMART HARDWARE', color:0x5DCAA5,
+        pos:[0,1.5,7.5], shape:'door',
+        desc:'Automatic sliding doors with threshold sensors. Triggers orthoscopic scanning pipeline as patient crosses.',
+        type:'Entry Infrastructure' },
+      { name:'Waiting Bench + Signage', tag:'WAYFINDING', color:0x5577aa,
+        pos:[-2.5,0.4,2], shape:'bench',
+        desc:'Seating area. Digital signage above displays ZerolangT-translated queue numbers and department directions.',
+        type:'Patient Experience' }
+    ]
+  },
+  {
+    id:1, name:'RECEPTION / OPD', short:'Reception',
+    color:0x1DB885, colorHex:'#1DB885', floorColor:0x081a10, wallColor:0x0a1e14, zone:'B',
+    position: new THREE.Vector3(0, 0, -14),
+    size: { w:12, h:4, d:10 },
+    desc:'Central hub for patient check-in, navigation kiosk, and AI CRM operations.',
+    items:[
+      { name:'ZerolangT Navigation Kiosk', tag:'KIOSK + ZEROLANG', color:0x1DB885,
+        pos:[-3,1.2,0], shape:'kiosk',
+        desc:'Floor-standing touchscreen. Patients find departments, doctors, rooms. ZerolangT provides 800+ language translations live.',
+        type:'Multilingual AI Kiosk' },
+      { name:'Reception AI Robot', tag:'AI ROBOT ASSISTANT', color:0x00FFB2,
+        pos:[-1.5,0,0], shape:'robot',
+        desc:'Autonomous AI-powered reception robot stationed beside the navigation kiosk. Greets patients, provides directions, assists with check-in, and guides visitors to departments using natural language in 800+ languages via ZerolangT.',
+        type:'Humanoid Service Robot' },
+      { name:'MediConnect Reception Desk', tag:'SAAS + AI AGENT', color:0x9FE1CB,
+        pos:[3,0.5,0], shape:'desk',
+        desc:'Staff manage appointments, check-ins, video consults. AI CRM calling agent handles patient call queues automatically in the cloud.',
+        type:'SaaS Platform' },
+      { name:'Queue Display Wall', tag:'LIVE DISPLAY', color:0x5DCAA5,
+        pos:[0,3.2,-4.5], shape:'screen',
+        desc:'Wall-mounted display showing live token queue, doctor availability, and appointment status streamed from MediConnect.',
+        type:'Real-time Display' }
+    ]
+  },
+  {
+    id:2, name:'DR. CONSULTATION A', short:'Dr. Room A',
+    color:0x7F77DD, colorHex:'#7F77DD', floorColor:0x0f0d28, wallColor:0x131030, zone:'C',
+    position: new THREE.Vector3(14, 0, 0),
+    size: { w:8, h:4, d:8 },
+    desc:'General consultation room with voice prescription mic and full AI EMR suite.',
+    items:[
+      { name:'Voice Prescription Mic', tag:'HARDWARE + VOICE AI', color:0x7F77DD,
+        pos:[0,1.2,0], shape:'mic',
+        desc:'High noise-cancellation mic. Listens to doctor-patient conversation, extracts medical terms via UMLS, auto-fills prescription ready to print or send digitally.',
+        type:'Voice AI Hardware' },
+      { name:'Doctor AI Workstation', tag:'EMR AI SUITE', color:0x534AB7,
+        pos:[2,0.9,1], shape:'computer',
+        desc:'EMR screen with CPT code assistant sidebar, AI report tool, ZerolangT translation panel, MediConnect video consult, and patient history dashboard.',
+        type:'Embedded AI Platform' },
+      { name:'Patient Report Screen', tag:'AI ANALYTICS', color:0xAFA9EC,
+        pos:[-2.5,2.2,-3], shape:'screen',
+        desc:'Wall display showing AI gait analysis from entrance cameras, uploaded health report summaries (30 languages), and full patient medical history.',
+        type:'Analytics Display' }
+    ]
+  },
+  {
+    id:3, name:'DENTAL ROOM', short:'Dental',
+    color:0xD4537E, colorHex:'#D4537E', floorColor:0x120d1e, wallColor:0x160f24, zone:'D',
+    position: new THREE.Vector3(0, 0, 14),
+    size: { w:8, h:4, d:8 },
+    desc:'Dental consultation room with HappyFace AI smile visualization system.',
+    items:[
+      { name:'HappyFace AI Tablet', tag:'HAPPYFACE AI', color:0xD4537E,
+        pos:[-2.5,1.8,0], shape:'tablet',
+        desc:'Wall tablet. Dentist captures patient dental image, selects treatment type. AI instantly generates realistic before-and-after smile preview.',
+        type:'Aesthetic AI Kiosk' },
+      { name:'Dental Chair + Imager', tag:'HARDWARE', color:0x993556,
+        pos:[0.5,0.5,0], shape:'dentalchair',
+        desc:'Dental chair with integrated high-resolution imaging camera. Feeds dental photos into HappyFace AI model automatically.',
+        type:'Clinical Hardware' },
+      { name:'Dental Consultation EMR', tag:'EMR + VOICE', color:0xAFA9EC,
+        pos:[3,1.2,1], shape:'computer',
+        desc:'Doctor\'s EMR with voice prescription mic, CPT code assistant, ZerolangT, patient history. Same AI suite as general rooms.',
+        type:'Embedded EMR Suite' }
+    ]
+  },
+  {
+    id:4, name:'PHARMACY', short:'Pharmacy',
+    color:0x7DB82A, colorHex:'#7DB82A', floorColor:0x091408, wallColor:0x0c1a0a, zone:'E',
+    position: new THREE.Vector3(-14, 0, -14),
+    size: { w:10, h:4, d:8 },
+    desc:'AI-powered pharmacy with drug interaction checks and smart inventory forecasting.',
+    items:[
+      { name:'AI Pharmacy Workstation', tag:'PHARMACY AI', color:0x7DB82A,
+        pos:[-1,0.9,0], shape:'computer',
+        desc:'Pharmacy Intelligence Engine: checks drug interactions, flags unsafe combinations, predicts adherence, forecasts inventory demand from prescription patterns.',
+        type:'Embedded Software AI' },
+      { name:'Smart Medicine Shelves', tag:'SMART INVENTORY', color:0x3B6D11,
+        pos:[3.5,1.5,0], shape:'shelf',
+        desc:'Inventory tracked in real time. AI demand forecasting predicts shortages and automatically generates restocking recommendations.',
+        type:'IoT + AI Inventory' },
+      { name:'Digital Prescription Terminal', tag:'AUTO-RECEIVE', color:0x97C459,
+        pos:[-3.5,0.9,0], shape:'desk',
+        desc:'Digital prescriptions arrive directly from doctor rooms. AI instantly checks drug conflicts before dispensing. Insurance codes auto-linked.',
+        type:'Integration Terminal' }
+    ]
+  },
+  {
+    id:5, name:'BILLING / INSURANCE', short:'Billing',
+    color:0xD4841A, colorHex:'#D4841A', floorColor:0x1a1005, wallColor:0x1e1408, zone:'F',
+    position: new THREE.Vector3(14, 0, -14),
+    size: { w:10, h:4, d:8 },
+    desc:'Auto insurance verification, OCR card reader, and CPT code assisted billing.',
+    items:[
+      { name:'Insurance Verification Station', tag:'SAAS + OCR AI', color:0xD4841A,
+        pos:[-1,0.9,0], shape:'computer',
+        desc:'Staff upload insurance card photo. OCR extracts data, runs eligibility check, analyzes benefits, calculates patient-payable amount, predicts approval risk.',
+        type:'Insurance AI Platform' },
+      { name:'CPT Code Terminal', tag:'CPT AI', color:0xEF9F27,
+        pos:[3,0.9,0], shape:'desk',
+        desc:'CPT code assistant embedded in billing. Receives codes from EMR, validates correctness, checks diagnosis relevance, ensures complete coding to reduce rejections.',
+        type:'Medical Coding AI' },
+      { name:'Document Printer Station', tag:'OUTPUT', color:0x854F0B,
+        pos:[-3.5,0.6,0], shape:'device',
+        desc:'Prints insurance verification reports, cost estimates, and billing summaries generated by the AI platform.',
+        type:'Output Device' }
+    ]
+  },
+  {
+    id:6, name:'ICU / CRITICAL CARE', short:'ICU',
+    color:0xE24B4A, colorHex:'#E24B4A', floorColor:0x180508, wallColor:0x1e070a, zone:'G',
+    position: new THREE.Vector3(-14, 0, 14),
+    size: { w:12, h:4, d:10 },
+    desc:'EWS 2.0 AI monitors all ICU patients simultaneously with real-time risk scoring.',
+    items:[
+      { name:'Patient Vitals Monitor', tag:'EWS 2.0 AI', color:0xE24B4A,
+        pos:[-3,1.2,0], shape:'monitor',
+        desc:'Bedside monitors stream vitals to Clinical Data Fusion Engine. EWS 2.0 analyzes rolling time windows — generates cardiac arrest, sepsis, respiratory failure risk scores.',
+        type:'EWS 2.0 Hardware + AI' },
+      { name:'ICU Nurse Station', tag:'RISK DASHBOARD', color:0xA32D2D,
+        pos:[3,0.9,0], shape:'computer',
+        desc:'Real-time patient risk board with EWS 2.0 alert triage queue. Colour-coded risk levels, human override panel, vitals fused from CNS layer.',
+        type:'AI Risk Dashboard' },
+      { name:'Alert Broadcast System', tag:'EMERGENCY ALERTS', color:0xF09595,
+        pos:[0,3.2,-4.5], shape:'speaker',
+        desc:'Ceiling speakers and corridor displays broadcast critical EWS 2.0 alerts to doctors\' mobile apps and nurse stations simultaneously.',
+        type:'Emergency Broadcast' }
+    ]
+  },
+  {
+    id:7, name:'OPERATION THEATRE', short:'OT',
+    color:0xD87030, colorHex:'#D87030', floorColor:0x1a0e04, wallColor:0x1e1206, zone:'H',
+    position: new THREE.Vector3(14, 0, 14),
+    size: { w:12, h:5, d:10 },
+    desc:'AI-assisted OT with computer vision instrument tracking and voice surgical notes.',
+    items:[
+      { name:'OT Ceiling Camera Array', tag:'CV AI HARDWARE', color:0xD87030,
+        pos:[0,4.2,-2], shape:'camera',
+        desc:'High-res cameras track surgical instruments and identify anatomical structures in real time. Computer vision AI overlays insights on surgeon\'s display.',
+        type:'Surgical Vision AI' },
+      { name:'Surgical Voice Mic Array', tag:'VOICE AI', color:0x993C1D,
+        pos:[0,3.8,1], shape:'mic',
+        desc:'Directional mic array captures surgeon voice commands, converts speech to structured medical data, auto-generates surgical notes in real time.',
+        type:'Surgical Voice AI' },
+      { name:'Surgical AI Display', tag:'AI OVERLAY', color:0xF0997B,
+        pos:[4.5,2.2,-1], shape:'screen',
+        desc:'Wall display showing live instrument tracking overlay, anatomy identification, procedure log auto-generation, and voice recognition status.',
+        type:'AI Display System' },
+      { name:'Operating Table', tag:'CORE ZONE', color:0x712B13,
+        pos:[0,0.5,0], shape:'table',
+        desc:'Central operating table. All AI monitoring systems operate from above — zero physical interference with surgical workflow.',
+        type:'Clinical Hardware' }
+    ]
+  },
+  {
+    id:8, name:'SERVER / IT ROOM', short:'Server',
+    color:0x8890A0, colorHex:'#8890A0', floorColor:0x080e14, wallColor:0x0a1018, zone:'I',
+    position: new THREE.Vector3(0, 0, 0),
+    size: { w:10, h:4, d:8 },
+    desc:'The backbone: Clinical Data Fusion Engine, multi-agent orchestrator, cloud gateway.',
+    items:[
+      { name:'Clinical Data Fusion Engine', tag:'CNS LAYER', color:0x5F5E5A,
+        pos:[-3,1.5,0], shape:'server',
+        desc:'Core CNS layer. Streams real-time data from EMR, vitals, labs, imaging into one unified patient profile. Feeds all 14 AI models with low-latency structured data.',
+        type:'Backend Infrastructure' },
+      { name:'Multi-Agent Orchestrator', tag:'AI BRAIN', color:0x8890A0,
+        pos:[0,1.5,0], shape:'server',
+        desc:'Top-level AI coordinator. Routes tasks between all 14 AI modules, prioritizes events, handles human overrides, ensures no conflicts between parallel AI systems.',
+        type:'Orchestration Engine' },
+      { name:'Cloud API Gateway', tag:'CLOUD', color:0xB4B2A9,
+        pos:[3,1.5,0], shape:'server',
+        desc:'Secure gateway connecting hospital to MediConnect SaaS, AI CRM agent, insurance API, UPI payment gateway, and HIPAA-compliant cloud storage.',
+        type:'Cloud Infrastructure' },
+      { name:'Admin Control Panel', tag:'ADMIN', color:0x444441,
+        pos:[0,3.0,-3.5], shape:'screen',
+        desc:'IT team monitors all 14 AI modules. Live system health, incident logs, human escalation triggers, and full override controls for every system.',
+        type:'Admin Console' }
+    ]
+  }
+];
+
+/* ═══════════════════════════ THREE.JS SETUP ═══════════════════════════ */
+const canvas = document.getElementById('canvas3d');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:false });
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.85;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.setClearColor(0x010409);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x010409, 20, 80);
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 200);
+
+/* ═══════════════════════════ LIGHTING ═══════════════════════════ */
+const ambientLight = new THREE.AmbientLight(0x112233, 0.6);
+scene.add(ambientLight);
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
+dirLight.position.set(10,20,10);
+dirLight.castShadow = true;
+scene.add(dirLight);
+
+/* ═══════════════════════════ MATERIALS ═══════════════════════════ */
+function matFloor(color){ return new THREE.MeshLambertMaterial({color, side:THREE.FrontSide}); }
+function matWall(color){ return new THREE.MeshLambertMaterial({color, side:THREE.DoubleSide}); }
+function matGlow(color){ return new THREE.MeshStandardMaterial({color, emissive:color, emissiveIntensity:0.3, roughness:0.8, metalness:0.2}); }
+function matItem(color){ return new THREE.MeshStandardMaterial({color, emissive:color, emissiveIntensity:0.15, roughness:0.5, metalness:0.4}); }
+
+/* ═══════════════════════════ BUILD ROOMS ═══════════════════════════ */
+const roomGroups = [];
+const interactables = [];
+const roomPortals = [];
+
+function addLabel(text, position, color=0xffffff, size=0.3){
+  // Sprite label using canvas texture
+  const canvas2 = document.createElement('canvas');
+  canvas2.width = 512; canvas2.height = 128;
+  const c = canvas2.getContext('2d');
+  c.clearRect(0,0,512,128);
+  c.fillStyle = 'rgba(0,5,20,0.75)';
+  c.roundRect(4,4,504,120,12);
+  c.fill();
+  c.strokeStyle = '#'+color.toString(16).padStart(6,'0')+'99';
+  c.lineWidth = 2;
+  c.roundRect(4,4,504,120,12);
+  c.stroke();
+  c.fillStyle = '#'+color.toString(16).padStart(6,'0');
+  c.font = 'bold 36px Courier New';
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  c.fillText(text, 256, 64);
+  const tex = new THREE.CanvasTexture(canvas2);
+  const mat = new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:false});
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(size*4, size, 1);
+  sprite.position.copy(position);
+  return sprite;
+}
+
+function buildShape(shape, color){
+  const mat = matItem(color);
+  const glowMat = matGlow(color);
+  let mesh;
+
+  if(shape==='camera'){
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.25,0.5), mat);
+    const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.13,0.3,16), glowMat);
+    lens.rotation.x = Math.PI/2; lens.position.z = 0.3;
+    g.add(body,lens);
+    return g;
+  }
+  if(shape==='door'){
+    const g = new THREE.Group();
+    const doorL = new THREE.Mesh(new THREE.BoxGeometry(1.5,3,0.1), mat);
+    const doorR = doorL.clone();
+    doorL.position.x = -0.75; doorR.position.x = 0.75;
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(3.2,3.3,0.15), matWall(color));
+    frame.position.z = -0.05;
+    g.add(doorL, doorR, frame);
+    return g;
+  }
+  if(shape==='kiosk'){
+    const g = new THREE.Group();
+    const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.12,1.0,8), mat);
+    const screen = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.5,0.06), glowMat);
+    screen.position.y = 0.7; screen.rotation.x = -0.2;
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.35,0.08,16), mat);
+    base.position.y = -0.5;
+    g.add(stand, screen, base);
+    return g;
+  }
+  if(shape==='desk'){
+    const g = new THREE.Group();
+    const top = new THREE.Mesh(new THREE.BoxGeometry(2.4,0.08,1.0), mat);
+    top.position.y = 0.4;
+    const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.8,0.08), mat);
+    leg1.position.set(-1.1,-0.0,0.4);
+    const leg2 = leg1.clone(); leg2.position.set(1.1,-0.0,0.4);
+    const leg3 = leg1.clone(); leg3.position.set(-1.1,-0.0,-0.4);
+    const leg4 = leg1.clone(); leg4.position.set(1.1,-0.0,-0.4);
+    g.add(top,leg1,leg2,leg3,leg4);
+    return g;
+  }
+  if(shape==='screen'){
+    const g = new THREE.Group();
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(2.2,1.4,0.08), mat);
+    const display = new THREE.Mesh(new THREE.BoxGeometry(2.0,1.2,0.05), glowMat);
+    display.position.z = 0.02;
+    const stand = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.6,0.1), mat);
+    stand.position.y = -1.0;
+    g.add(frame, display, stand);
+    return g;
+  }
+  if(shape==='computer'){
+    const g = new THREE.Group();
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(0.5,1.0,0.3), mat);
+    tower.position.set(-0.7,0.5,0);
+    const monitor = new THREE.Mesh(new THREE.BoxGeometry(1.2,0.8,0.06), mat);
+    monitor.position.set(0.3,1.0,0);
+    const screen2 = new THREE.Mesh(new THREE.BoxGeometry(1.1,0.7,0.04), glowMat);
+    screen2.position.set(0.3,1.0,0.04);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.04,0.25), mat);
+    base.position.set(0.3,0.6,0);
+    const keyboard = new THREE.Mesh(new THREE.BoxGeometry(1.0,0.03,0.35), mat);
+    keyboard.position.set(0.3,0.03,0.4);
+    g.add(tower,monitor,screen2,base,keyboard);
+    return g;
+  }
+  if(shape==='mic'){
+    const g = new THREE.Group();
+    const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.8,8), mat);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.15,16,16), glowMat);
+    head.position.y = 0.5;
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.25,0.05,16), mat);
+    base.position.y = -0.4;
+    g.add(stand, head, base);
+    return g;
+  }
+  if(shape==='server'){
+    const g = new THREE.Group();
+    for(let i=0;i<4;i++){
+      const unit = new THREE.Mesh(new THREE.BoxGeometry(1.4,0.22,0.8), mat);
+      unit.position.y = i*0.28 - 0.3;
+      const led = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.04,0.04), glowMat);
+      led.position.set(0.65, i*0.28 - 0.3, 0.3);
+      g.add(unit, led);
+    }
+    const rack = new THREE.Mesh(new THREE.BoxGeometry(1.5,1.5,0.9), matWall(0x111518));
+    rack.position.y = 0.2;
+    g.add(rack);
+    return g;
+  }
+  if(shape==='monitor'){
+    const g = new THREE.Group();
+    const stand = new THREE.Mesh(new THREE.BoxGeometry(0.3,1.4,0.3), mat);
+    const screen3 = new THREE.Mesh(new THREE.BoxGeometry(1.0,0.7,0.06), glowMat);
+    screen3.position.y = 0.8;
+    g.add(stand, screen3);
+    return g;
+  }
+  if(shape==='shelf'){
+    const g = new THREE.Group();
+    for(let i=0;i<3;i++){
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.0,0.06,0.5), mat);
+      shelf.position.y = i*0.6-0.3;
+      g.add(shelf);
+      for(let j=0;j<5;j++){
+        const box = new THREE.Mesh(new THREE.BoxGeometry(0.18,0.3+Math.random()*0.2,0.14), matGlow(color));
+        box.position.set(-0.8+j*0.4, i*0.6-0.1, 0);
+        g.add(box);
+      }
+    }
+    return g;
+  }
+  if(shape==='speaker'){
+    const g = new THREE.Group();
+    const body2 = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,0.3), mat);
+    const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.22,0.12,16), glowMat);
+    cone.rotation.x = Math.PI/2; cone.position.z = 0.2;
+    g.add(body2, cone);
+    return g;
+  }
+  if(shape==='tablet'){
+    const g = new THREE.Group();
+    const frame2 = new THREE.Mesh(new THREE.BoxGeometry(0.6,0.85,0.04), mat);
+    const disp = new THREE.Mesh(new THREE.BoxGeometry(0.55,0.78,0.03), glowMat);
+    disp.position.z = 0.01;
+    g.add(frame2, disp);
+    return g;
+  }
+  if(shape==='dentalchair'){
+    const g = new THREE.Group();
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(1.0,0.1,2.0), mat);
+    seat.position.y = 0.5;
+    const back = new THREE.Mesh(new THREE.BoxGeometry(1.0,1.0,0.12), mat);
+    back.position.set(0,1.0,-0.9); back.rotation.x = 0.15;
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.15,0.5,8), mat);
+    leg.position.y = 0.25;
+    g.add(seat,back,leg);
+    return g;
+  }
+  if(shape==='table'){
+    const g = new THREE.Group();
+    const top2 = new THREE.Mesh(new THREE.BoxGeometry(1.8,0.1,2.4), mat);
+    top2.position.y = 0.5;
+    const leg5 = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.5,0.1), mat);
+    leg5.position.set(-0.8,0.25,-1.1);
+    [[-0.8,0.25,1.1],[0.8,0.25,-1.1],[0.8,0.25,1.1]].forEach(p=>{
+      const l=leg5.clone();l.position.set(...p);g.add(l);
+    });
+    g.add(top2,leg5);
+    return g;
+  }
+  if(shape==='device'){
+    const g = new THREE.Group();
+    const body3 = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.8,0.4), mat);
+    const out = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.05,0.3), glowMat);
+    out.position.set(0,0.2,0.15);
+    g.add(body3, out);
+    return g;
+  }
+
+  if(shape==='robot'){
+    const g = new THREE.Group();
+    const RS = 1.7;
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.42*RS, 0.52*RS, 0.28*RS), mat);
+    torso.position.y = 0.86*RS;
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.32*RS, 0.30*RS, 0.26*RS), mat);
+    head.position.y = 1.32*RS;
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.22*RS, 0.12*RS, 0.04*RS), glowMat);
+    visor.position.set(0, 1.34*RS, 0.14*RS);
+    const antennaStick = new THREE.Mesh(new THREE.CylinderGeometry(0.018*RS, 0.018*RS, 0.22*RS, 8), mat);
+    antennaStick.position.y = 1.58*RS;
+    const antennaTip = new THREE.Mesh(new THREE.SphereGeometry(0.045*RS, 8, 8), glowMat);
+    antennaTip.position.y = 1.70*RS;
+    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.10*RS, 0.44*RS, 0.12*RS), mat);
+    armL.position.set(-0.28*RS, 0.80*RS, 0);
+    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.10*RS, 0.44*RS, 0.12*RS), mat);
+    armR.position.set(0.28*RS, 0.80*RS, 0);
+    const handL = new THREE.Mesh(new THREE.SphereGeometry(0.07*RS, 10, 10), glowMat);
+    handL.position.set(-0.28*RS, 0.56*RS, 0);
+    const handR = handL.clone();
+    handR.position.set(0.28*RS, 0.56*RS, 0);
+    const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.38*RS, 0.16*RS, 0.24*RS), mat);
+    pelvis.position.y = 0.58*RS;
+    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.14*RS, 0.50*RS, 0.16*RS), mat);
+    legL.position.set(-0.12*RS, 0.25*RS, 0);
+    const legR = legL.clone();
+    legR.position.set(0.12*RS, 0.25*RS, 0);
+    const footL = new THREE.Mesh(new THREE.BoxGeometry(0.16*RS, 0.07*RS, 0.22*RS), glowMat);
+    footL.position.set(-0.12*RS, 0.0, 0.03*RS);
+    const footR = footL.clone();
+    footR.position.set(0.12*RS, 0.0, 0.03*RS);
+    const chestLight = new THREE.Mesh(new THREE.CylinderGeometry(0.06*RS, 0.06*RS, 0.04*RS, 12), glowMat);
+    chestLight.rotation.x = Math.PI/2;
+    chestLight.position.set(0, 0.92*RS, 0.15*RS);
+    g.add(torso, head, visor, antennaStick, antennaTip,
+          armL, armR, handL, handR,
+          pelvis, legL, legR, footL, footR, chestLight);
+    g.userData.robotTopY = 1.70*RS + 0.045*RS;
+    return g;
+  }
+
+  // Fallback sphere
+  return new THREE.Mesh(new THREE.SphereGeometry(0.3,16,16), glowMat);
+}
+
+function buildRoom(roomData){
+  const group = new THREE.Group();
+  const {w,h,d} = roomData.size;
+  const wallMat = matWall(roomData.wallColor);
+  const floorMat = matFloor(roomData.floorColor);
+
+  // Floor
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(w,d), floorMat);
+  floor.rotation.x = -Math.PI/2;
+  floor.receiveShadow = true;
+  group.add(floor);
+
+  // Ceiling
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(w,d), wallMat);
+  ceil.rotation.x = Math.PI/2;
+  ceil.position.y = h;
+  group.add(ceil);
+
+  // Walls
+  const backWall = new THREE.Mesh(new THREE.PlaneGeometry(w,h), wallMat);
+  backWall.position.set(0,h/2,-d/2);
+  group.add(backWall);
+
+  const frontWall = new THREE.Mesh(new THREE.PlaneGeometry(w,h), wallMat);
+  frontWall.rotation.y = Math.PI;
+  frontWall.position.set(0,h/2,d/2);
+  group.add(frontWall);
+
+  const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(d,h), wallMat);
+  leftWall.rotation.y = Math.PI/2;
+  leftWall.position.set(-w/2,h/2,0);
+  group.add(leftWall);
+
+  const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(d,h), wallMat);
+  rightWall.rotation.y = -Math.PI/2;
+  rightWall.position.set(w/2,h/2,0);
+  group.add(rightWall);
+
+  // Room accent light
+  const pLight = new THREE.PointLight(roomData.color, 0.6, w*1.5);
+  pLight.position.set(0,h-0.5,0);
+  group.add(pLight);
+
+  // Floor grid lines (glowing)
+  const gridMat = new THREE.LineBasicMaterial({color:roomData.color, transparent:true, opacity:0.08});
+  for(let x=-Math.floor(w/2);x<=Math.floor(w/2);x+=1){
+    const pts=[new THREE.Vector3(x,0.01,-d/2),new THREE.Vector3(x,0.01,d/2)];
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),gridMat));
+  }
+  for(let z=-Math.floor(d/2);z<=Math.floor(d/2);z+=1){
+    const pts=[new THREE.Vector3(-w/2,0.01,z),new THREE.Vector3(w/2,0.01,z)];
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),gridMat));
+  }
+
+  // Items
+  roomData.items.forEach((item, idx)=>{
+    const obj = buildShape(item.shape, item.color);
+    obj.position.set(...item.pos);
+
+    // Hover glow ring
+    const ringGeo = new THREE.TorusGeometry(0.6,0.03,8,32);
+    const ringMat = new THREE.MeshBasicMaterial({color:item.color,transparent:true,opacity:0.0});
+    const ring = new THREE.Mesh(ringGeo,ringMat);
+    ring.rotation.x = Math.PI/2;
+    ring.position.set(...item.pos);
+    ring.position.y = 0.05;
+    group.add(ring);
+
+    // Floating label — for robot, place above the antenna tip; for others use default offset
+    const labelY = (item.shape === 'robot' && obj.userData && obj.userData.robotTopY != null)
+      ? item.pos[1] + obj.userData.robotTopY + 0.35
+      : item.pos[1] + 1.2;
+    const labelPos = new THREE.Vector3(item.pos[0], labelY, item.pos[2]);
+    const labelSprite = addLabel(item.name, labelPos, item.color, 0.22);
+    group.add(labelSprite);
+
+    // Animated beam from floor
+    const beamGeo = new THREE.CylinderGeometry(0.02,0.02,item.pos[1]||0.5,8);
+    const beamMat = new THREE.MeshBasicMaterial({color:item.color,transparent:true,opacity:0.15});
+    const beam = new THREE.Mesh(beamGeo, beamMat);
+    beam.position.set(item.pos[0], (item.pos[1]||0.5)/2, item.pos[2]);
+    group.add(beam);
+
+    // Mark as interactable
+    obj.traverse(child=>{
+      if(child.isMesh){
+        child.userData = {
+          roomId: roomData.id, itemIdx: idx,
+          item, ring, beam, labelSprite,
+          baseEmissive: child.material.emissiveIntensity||0
+        };
+        interactables.push(child);
+      }
+    });
+    group.add(obj);
+  });
+
+  return group;
+}
+
+/* ─── OVERVIEW AREA ─── */
+function buildOverview(){
+  const group = new THREE.Group();
+  // Large floor
+  const flr = new THREE.Mesh(new THREE.PlaneGeometry(80,80), matFloor(0x020810));
+  flr.rotation.x = -Math.PI/2;
+  flr.position.y = -0.01;
+  group.add(flr);
+
+  // Grid
+  const gm = new THREE.LineBasicMaterial({color:0x1a3a6a,transparent:true,opacity:0.3});
+  for(let x=-40;x<=40;x+=4){
+    const pts=[new THREE.Vector3(x,0,-40),new THREE.Vector3(x,0,40)];
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),gm));
+  }
+  for(let z=-40;z<=40;z+=4){
+    const pts=[new THREE.Vector3(-40,0,z),new THREE.Vector3(40,0,z)];
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),gm));
+  }
+  scene.add(group);
+}
+
+/* ─── BUILD PORTAL BOXES FOR OVERVIEW ─── */
+function buildPortal(roomData){
+  const {w,d,h} = roomData.size;
+
+  // Exterior box outline
+  const edges = new THREE.EdgesGeometry(new THREE.BoxGeometry(w,h,d));
+  const lineMat = new THREE.LineBasicMaterial({color:roomData.color,transparent:true,opacity:0.6});
+  const wireframe = new THREE.LineSegments(edges,lineMat);
+  wireframe.position.copy(roomData.position);
+  wireframe.position.y = h/2;
+  scene.add(wireframe);
+
+  // Glow floor plane inside box
+  const gp = new THREE.Mesh(
+    new THREE.PlaneGeometry(w-0.2,d-0.2),
+    new THREE.MeshBasicMaterial({color:roomData.color,transparent:true,opacity:0.06,side:THREE.DoubleSide})
+  );
+  gp.rotation.x = -Math.PI/2;
+  gp.position.copy(roomData.position);
+  gp.position.y = 0.02;
+  scene.add(gp);
+
+  // Room name label above
+  const lpos = roomData.position.clone();
+  lpos.y = h+0.6;
+  const sprite = addLabel(roomData.short, lpos, roomData.color, 0.3);
+  scene.add(sprite);
+
+  // Clickable plane for entering room
+  const clickPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(w,d),
+    new THREE.MeshBasicMaterial({transparent:true,opacity:0,side:THREE.DoubleSide})
+  );
+  clickPlane.rotation.x = -Math.PI/2;
+  clickPlane.position.copy(roomData.position);
+  clickPlane.position.y = 0.1;
+  clickPlane.userData = {isPortal:true, roomId:roomData.id};
+  scene.add(clickPlane);
+  roomPortals.push(clickPlane);
+
+  // Corner pillars
+  const pillarMat = new THREE.MeshStandardMaterial({color:roomData.color,emissive:roomData.color,emissiveIntensity:0.2,roughness:0.8});
+  [[-w/2,-d/2],[w/2,-d/2],[-w/2,d/2],[w/2,d/2]].forEach(([px,pz])=>{
+    const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.15,h,0.15),pillarMat);
+    pillar.position.set(roomData.position.x+px, h/2, roomData.position.z+pz);
+    scene.add(pillar);
+  });
+}
+
+/* ═══════════════════════════ STATE ═══════════════════════════ */
+let mode = 'overview'; // 'overview' | 'room'
+let currentRoomId = -1;
+let roomMeshGroup = null;
+const clock = new THREE.Clock();
+
+// Camera state
+let camPos = new THREE.Vector3(0, 8, 25);
+let camYaw = 0, camPitch = -0.4;
+let moveForward=false,moveBack=false,moveLeft=false,moveRight=false;
+let isPointerLocked = false;
+let hovered = null;
+let prevHovered = null;
+
+camera.position.copy(camPos);
+
+/* ═══════════════════════════ POINTER LOCK ═══════════════════════════ */
+canvas.addEventListener('click', onCanvasClick);
+
+document.addEventListener('pointerlockchange', ()=>{
+  isPointerLocked = !!document.pointerLockElement;
+});
+document.addEventListener('mousemove', e=>{
+  if(!isPointerLocked) return;
+  camYaw   -= e.movementX * 0.002;
+  camPitch -= e.movementY * 0.002;
+  camPitch = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, camPitch));
+});
+
+/* ═══════════════════════════ KEYBOARD ═══════════════════════════ */
+document.addEventListener('keydown', e=>{
+  switch(e.code){
+    case 'KeyW':case'ArrowUp': moveForward=true; break;
+    case 'KeyS':case'ArrowDown': moveBack=true; break;
+    case 'KeyA':case'ArrowLeft': moveLeft=true; break;
+    case 'KeyD':case'ArrowRight': moveRight=true; break;
+    case 'Escape': if(mode==='room') exitRoom(); else if(isPointerLocked) document.exitPointerLock(); break;
+  }
+});
+document.addEventListener('keyup', e=>{
+  switch(e.code){
+    case 'KeyW':case'ArrowUp': moveForward=false; break;
+    case 'KeyS':case'ArrowDown': moveBack=false; break;
+    case 'KeyA':case'ArrowLeft': moveLeft=false; break;
+    case 'KeyD':case'ArrowRight': moveRight=false; break;
+  }
+});
+
+/* ═══════════════════════════ RAYCASTER ═══════════════════════════ */
+const raycaster = new THREE.Raycaster();
+const centerScreen = new THREE.Vector2(0,0);
+
+function getRaycastTarget(){
+  raycaster.setFromCamera(centerScreen, camera);
+  if(mode==='overview'){
+    const hits = raycaster.intersectObjects(roomPortals);
+    if(hits.length>0) return {type:'portal', data:hits[0].object.userData};
+  } else {
+    const hits = raycaster.intersectObjects(interactables);
+    if(hits.length>0) return {type:'item', data:hits[0].object.userData};
+  }
+  return null;
+}
+
+/* ═══════════════════════════ ENTER / EXIT ═══════════════════════════ */
+function enterRoom(roomId){
+  if(mode==='room') exitRoom();
+  mode = 'room';
+  currentRoomId = roomId;
+  const r = ROOMS[roomId];
+
+  if(roomMeshGroup) scene.remove(roomMeshGroup);
+  roomMeshGroup = buildRoom(r);
+  roomMeshGroup.position.copy(r.position);
+  scene.add(roomMeshGroup);
+
+  // Position camera inside room
+  camera.position.set(r.position.x, 1.7, r.position.z + r.size.d/2 - 1.2);
+  camYaw = Math.PI;
+  camPitch = 0;
+
+  document.getElementById('room-name').textContent = r.name;
+  document.getElementById('mode-badge').textContent = 'INSIDE ROOM · WASD MOVE · LOOK AROUND · CLICK ITEMS · ESC = EXIT';
+  document.querySelectorAll('.room-btn').forEach((b,i)=>b.classList.toggle('active',i===roomId));
+  updateMinimap();
+  closeInfo();
+}
+
+function exitRoom(){
+  mode = 'overview';
+  currentRoomId = -1;
+  if(roomMeshGroup){ scene.remove(roomMeshGroup); roomMeshGroup=null; }
+  // Reset interactables array state
+  interactables.length = 0;
+
+  camera.position.set(0,10,28);
+  camYaw = 0; camPitch = -0.35;
+  moveForward=moveBack=moveLeft=moveRight=false;
+
+  document.getElementById('room-name').textContent = 'HOSPITAL OVERVIEW';
+  document.getElementById('mode-badge').textContent = 'OVERVIEW MODE — CLICK A ROOM TO ENTER';
+  document.querySelectorAll('.room-btn').forEach(b=>b.classList.remove('active'));
+  closeInfo();
+  updateMinimap();
+  document.exitPointerLock();
+}
+
+function onCanvasClick(){
+  const target = getRaycastTarget();
+  if(target){
+    if(target.type==='portal'){
+      enterRoom(target.data.roomId);
+      canvas.requestPointerLock();
+    } else if(target.type==='item'){
+      showInfo(target.data);
+    }
+  } else if(mode==='room'){
+    canvas.requestPointerLock();
+  }
+}
+
+/* ═══════════════════════════ INFO PANEL ═══════════════════════════ */
+function showInfo(userData){
+  const {item} = userData;
+  const panel = document.getElementById('info-panel');
+  const colorHex = '#'+item.color.toString(16).padStart(6,'0');
+  document.getElementById('ip-tag').textContent = item.tag;
+  document.getElementById('ip-tag').style.background = colorHex+'25';
+  document.getElementById('ip-tag').style.color = colorHex;
+  document.getElementById('ip-tag').style.border = `1px solid ${colorHex}40`;
+  document.getElementById('ip-name').textContent = item.name;
+  document.getElementById('ip-desc').textContent = item.desc;
+  document.getElementById('ip-type').textContent = item.type;
+  document.getElementById('ip-zone').textContent = 'ZONE '+ROOMS[userData.roomId].zone;
+  panel.classList.add('visible');
+  document.exitPointerLock();
+}
+function closeInfo(){
+  document.getElementById('info-panel').classList.remove('visible');
+}
+
+/* ═══════════════════════════ MINIMAP ═══════════════════════════ */
+function updateMinimap(){
+  const mc = document.getElementById('map-canvas');
+  const mctx = mc.getContext('2d');
+  const W=mc.width, H=mc.height;
+  mctx.fillStyle='#040a14'; mctx.fillRect(0,0,W,H);
+  mctx.strokeStyle='rgba(40,80,160,0.3)'; mctx.lineWidth=0.5;
+  for(let x=0;x<W;x+=20){mctx.beginPath();mctx.moveTo(x,0);mctx.lineTo(x,H);mctx.stroke();}
+  for(let y=0;y<H;y+=15){mctx.beginPath();mctx.moveTo(0,y);mctx.lineTo(W,y);mctx.stroke();}
+
+  const scale=3.0, ox=W/2, oy=H/2;
+  ROOMS.forEach(r=>{
+    const rx=ox+r.position.x*scale - r.size.w*scale/2;
+    const ry=oy+r.position.z*scale - r.size.d*scale/2;
+    const rw=r.size.w*scale, rh=r.size.d*scale;
+    const isAct = r.id===currentRoomId;
+    const c='#'+r.color.toString(16).padStart(6,'0');
+    mctx.fillStyle=isAct?c+'40':c+'15';
+    mctx.fillRect(rx,ry,rw,rh);
+    mctx.strokeStyle=isAct?c:c+'70';
+    mctx.lineWidth=isAct?1.5:0.7;
+    mctx.strokeRect(rx,ry,rw,rh);
+    mctx.fillStyle=c;
+    mctx.font='6px monospace';
+    mctx.textAlign='center';
+    mctx.fillText(r.short, rx+rw/2, ry+rh/2+2);
+  });
+
+  // Camera dot
+  const cx=ox+camera.position.x*scale, cy=oy+camera.position.z*scale;
+  mctx.beginPath(); mctx.arc(cx,cy,3,0,Math.PI*2);
+  mctx.fillStyle='#fff'; mctx.fill();
+  // Direction arrow
+  const ax=cx+Math.sin(camYaw)*8, ay=cy+Math.cos(camYaw)*8;
+  mctx.beginPath(); mctx.moveTo(cx,cy); mctx.lineTo(ax,ay);
+  mctx.strokeStyle='#fff'; mctx.lineWidth=1; mctx.stroke();
+}
+
+/* ═══════════════════════════ NAV BUTTONS ═══════════════════════════ */
+function buildNavButtons(){
+  const bar = document.getElementById('room-selector');
+  const exitBtn = document.createElement('button');
+  exitBtn.className='room-btn';
+  exitBtn.textContent='← OVERVIEW';
+  exitBtn.style.borderColor='rgba(255,80,80,0.3)';
+  exitBtn.style.color='rgba(255,120,120,0.7)';
+  exitBtn.onclick=exitRoom;
+  bar.appendChild(exitBtn);
+
+  ROOMS.forEach((r,i)=>{
+    const btn=document.createElement('button');
+    btn.className='room-btn';
+    btn.textContent=r.short.toUpperCase();
+    btn.style.borderColor=r.colorHex+'40';
+    btn.onclick=()=>{ enterRoom(i); canvas.requestPointerLock(); };
+    bar.appendChild(btn);
+  });
+}
+
+/* ═══════════════════════════ ANIMATE ═══════════════════════════ */
+const _euler = new THREE.Euler(0,0,0,'YXZ');
+const _dir = new THREE.Vector3();
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+
+  // Camera rotation
+  _euler.set(camPitch, camYaw, 0);
+  camera.quaternion.setFromEuler(_euler);
+
+  // Movement
+  const speed = mode==='room' ? 4.5 : 8;
+  _dir.set(0,0,0);
+  if(moveForward) _dir.z -= 1;
+  if(moveBack)    _dir.z += 1;
+  if(moveLeft)    _dir.x -= 1;
+  if(moveRight)   _dir.x += 1;
+  if(_dir.length()>0) _dir.normalize();
+
+  const moveVec = _dir.clone().applyEuler(new THREE.Euler(0,camYaw,0));
+  camera.position.addScaledVector(moveVec, speed*dt);
+  camera.position.y = mode==='room' ? 1.7 : Math.max(1.5, camera.position.y);
+
+  // Constrain inside room
+  if(mode==='room' && currentRoomId>=0){
+    const r = ROOMS[currentRoomId];
+    const margin = 0.5;
+    camera.position.x = Math.max(r.position.x-r.size.w/2+margin, Math.min(r.position.x+r.size.w/2-margin, camera.position.x));
+    camera.position.z = Math.max(r.position.z-r.size.d/2+margin, Math.min(r.position.z+r.size.d/2-margin, camera.position.z));
+  }
+
+  // Hover detection
+  const target = getRaycastTarget();
+  const crossDot = document.getElementById('crosshair-dot');
+  const enterPrompt = document.getElementById('enter-prompt');
+
+  if(target){
+    crossDot.classList.add('hover');
+    if(target.type==='portal'){
+      enterPrompt.classList.add('visible');
+      enterPrompt.textContent = '[ CLICK TO ENTER '+ROOMS[target.data.roomId].name+' ]';
+    } else {
+      enterPrompt.classList.add('visible');
+      enterPrompt.textContent = '[ CLICK FOR DETAILS ]';
+    }
+    // Glow the hovered item
+    if(target.type==='item' && target.data.ring){
+      target.data.ring.material.opacity = 0.5+Math.sin(t*4)*0.3;
+    }
+    hovered = target;
+  } else {
+    crossDot.classList.remove('hover');
+    enterPrompt.classList.remove('visible');
+    hovered = null;
+  }
+
+  // Animate item rings + robot bob
+  if(mode==='room' && roomMeshGroup){
+    interactables.forEach(mesh=>{
+      if(mesh.userData.ring){
+        const isH = hovered && hovered.type==='item' && hovered.data.ring===mesh.userData.ring;
+        mesh.userData.ring.material.opacity = isH ? 0.6+Math.sin(t*5)*0.3 : 0.15+Math.sin(t*2+mesh.userData.itemIdx)*0.08;
+        mesh.userData.ring.rotation.z = t*0.5;
+        mesh.userData.beam.material.opacity = 0.1+Math.sin(t*2+mesh.userData.itemIdx*0.7)*0.07;
+      }
+      // Pulse emissive
+      if(mesh.material && mesh.material.emissiveIntensity!==undefined){
+        mesh.material.emissiveIntensity = (mesh.userData.baseEmissive||0.15)+Math.sin(t*1.5+mesh.userData.itemIdx||0)*0.1;
+      }
+      // Robot bob — gently move up/down
+      if(mesh.userData.item && mesh.userData.item.shape==='robot' && mesh.parent){
+        mesh.parent.position.y = Math.sin(t*1.2)*0.04;
+        mesh.parent.rotation.y = Math.sin(t*0.4)*0.06;
+      }
+    });
+  }
+
+  // Overview portal animations
+  if(mode==='overview'){
+    roomPortals.forEach((portal,i)=>{
+      // Already animated via room glow
+    });
+  }
+
+  updateMinimap();
+  renderer.render(scene, camera);
+}
+
+/* ═══════════════════════════ INIT ═══════════════════════════ */
+function loadProgress(pct, text){
+  document.getElementById('load-bar').style.width = pct+'%';
+  document.getElementById('load-text').textContent = text;
+}
+
+async function init(){
+  loadProgress(10,'BUILDING WORLD GEOMETRY…');
+  buildOverview();
+  loadProgress(25,'GENERATING ROOM PORTALS…');
+  ROOMS.forEach(r=>buildPortal(r));
+  loadProgress(60,'POPULATING AI HARDWARE MODELS…');
+  buildNavButtons();
+  loadProgress(80,'CALIBRATING LIGHTING…');
+  // Ambient star field
+  const starGeo = new THREE.BufferGeometry();
+  const starVerts = [];
+  for(let i=0;i<800;i++){
+    starVerts.push((Math.random()-0.5)*120,(Math.random()*30+5),(Math.random()-0.5)*120);
+  }
+  starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starVerts,3));
+  scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color:0x445577,size:0.08})));
+  loadProgress(95,'STARTING RENDER…');
+  animate();
+  await new Promise(r=>setTimeout(r,400));
+  loadProgress(100,'READY');
+  await new Promise(r=>setTimeout(r,300));
+  document.getElementById('loading').classList.add('done');
+}
+
+window.addEventListener('resize',()=>{
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+window.closeInfo = closeInfo;
+init();
+</script>
+</body>
+</html>
