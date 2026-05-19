@@ -1,73 +1,149 @@
-# Welcome to your Lovable project
+<![CDATA[# CuraQuantis
 
-## Project info
+**AI-Powered Healthcare Intelligence Platform by Zerokost**
 
-**URL**: https://lovable.dev/projects/93408fbe-9e84-4901-86e9-ce3e574fc0f8
+CuraQuantis is a next-generation healthcare platform that combines artificial intelligence, voice technology, and advanced analytics to revolutionize clinical workflows, patient engagement, and healthcare operations.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## ✨ Features
 
-**Use Lovable**
+- **CuraVoice AI** — Multilingual voice intelligence for healthcare with real-time transcription, clinical note generation, and patient communication
+- **Healthcare Ecosystem** — Unified dashboard connecting hospitals, diagnostics, insurance, and patient recruitment pipelines
+- **Demo Center** — Interactive 360° demonstrations of platform capabilities
+- **Insights Hub** — AI-driven analytics and industry trend analysis
+- **Solutions Engine** — Modular healthcare solutions for clinical trials, diagnostics, and pharma operations
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/93408fbe-9e84-4901-86e9-ce3e574fc0f8) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠 Tech Stack
 
-**Use your preferred IDE**
+| Layer        | Technology                                      |
+| ------------ | ----------------------------------------------- |
+| **Frontend** | React 18, TypeScript, Vite                      |
+| **Styling**  | Tailwind CSS, Framer Motion                     |
+| **UI**       | shadcn/ui, Radix UI, Lucide Icons               |
+| **Routing**  | React Router v6                                 |
+| **Charts**   | Recharts                                        |
+| **Forms**    | React Hook Form, Zod                            |
+| **Email**    | EmailJS                                         |
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🚀 Getting Started
 
-Follow these steps:
+### Prerequisites
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **Node.js** ≥ 18.x — [Download here](https://nodejs.org/)
+- **npm** ≥ 9.x (comes with Node.js)
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Installation
 
-# Step 3: Install the necessary dependencies.
-npm i
+```bash
+# 1. Clone the repository
+git clone https://github.com/RaJM2004/CuraQuantis.git
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 2. Navigate into the project directory
+cd CuraQuantis
+
+# 3. Install dependencies
+npm install
+```
+
+### Running the Development Server
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will start on **http://localhost:5173** (or the next available port). The dev server supports hot module replacement (HMR) for instant updates as you edit.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Building for Production
 
-**Use GitHub Codespaces**
+```bash
+# Create an optimized production build
+npm run build
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Preview the production build locally
+npm run preview
+```
 
-## What technologies are used for this project?
+### Linting
 
-This project is built with:
+```bash
+npm run lint
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## 📁 Project Structure
 
-Simply open [Lovable](https://lovable.dev/projects/93408fbe-9e84-4901-86e9-ce3e574fc0f8) and click on Share -> Publish.
+```
+CuraQuantis/
+├── public/                  # Static assets (images, audio, HTML)
+├── src/
+│   ├── components/          # Reusable UI components
+│   │   ├── AboutSection.tsx
+│   │   ├── ContactSection.tsx
+│   │   ├── CuraVoiceAISection.tsx
+│   │   ├── Footer.tsx
+│   │   ├── HealthcareEcosystemSection.tsx
+│   │   ├── HeroSection.tsx
+│   │   ├── IndustriesSection.tsx
+│   │   ├── IntroSection.tsx
+│   │   ├── Navbar.tsx
+│   │   ├── ScrollToTop.tsx
+│   │   ├── SolutionsSection.tsx
+│   │   └── WhyAISection.tsx
+│   ├── pages/               # Page-level components
+│   │   ├── About.tsx
+│   │   ├── Contact.tsx
+│   │   ├── DemoCenter.tsx
+│   │   ├── Index.tsx
+│   │   ├── Insights.tsx
+│   │   └── Solutions.tsx
+│   ├── App.tsx              # Root component with routing
+│   └── index.css            # Global styles
+├── index.html               # Entry HTML
+├── tailwind.config.ts       # Tailwind CSS configuration
+├── vite.config.ts           # Vite build configuration
+├── tsconfig.json            # TypeScript configuration
+└── package.json             # Dependencies & scripts
+```
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+## 📜 Available Scripts
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+| Command           | Description                              |
+| ----------------- | ---------------------------------------- |
+| `npm run dev`     | Start the development server with HMR    |
+| `npm run build`   | Create an optimized production build      |
+| `npm run preview` | Preview the production build locally      |
+| `npm run lint`    | Run ESLint to check for code issues       |
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m "Add your feature"`)
+4. Push to the branch (`git push origin feature/your-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is proprietary software owned by **Zerokost**.
+
+---
+
+## 📬 Contact
+
+- **Company**: Zerokost
+- **Founder**: Ashwin Kumar T S
+- **Website**: [curaquantis.com](https://curaquantis.com)
+- **GitHub**: [RaJM2004](https://github.com/RaJM2004)
+]]>
