@@ -156,7 +156,7 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-blue-900 mb-2">Contact Info</h3>
-                  <p className="text-gray-600">Email: ashwin@curaquantis.com<br />Phone: +91 7036955133</p>
+                  <p className="text-gray-600">Email: support@curaquantis.com<br />Phone: +91 7036955133</p>
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-blue-900 mb-2">Business Hours</h3>

@@ -2,21 +2,22 @@ import React from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Mail } from 'lucide-react';
 
 
 const About: React.FC = () => {
   const teamMembers = [
     {
-      name: 'Kumar Thirukkovalur',
-      role: 'Executive Director & CEO',
-      image: '',
-      bio: '12+ years in Pharma & IT, leading R&D, marketing, and strategic partnerships, with 2 patents and 20+ publications. Pursuing a DBA in Generative AI with extensive certifications in AI, cloud, and quality systems.'
+      name: 'Dharani N Viswanath',
+      role: 'Chairman and Managing Director of CuraQuantis Health Clinics Pvt Ltd',
+      image: '/Dharni.jpeg',
+      email: 'mailto:dv_nalli@curaquantis.com'
     },
     {
       name: 'Ananya Parikibandla',
-      role: 'Executive Director & CQO',
+      role: 'Co Founder and Executive Director of CuraQuantis Health Clinics Pvt Ltd',
       image: '/Ananya.png',
-      bio: 'Master of Pharmacy with 12+ years in Pharma & IT, specializing in quality, regulatory, and formulation development, with 6+ publications and key certifications. Skilled in strategic leadership and team management.'
+      email: 'mailto:ananya@curaquantis.com'
     }
   ];
 
@@ -104,36 +105,57 @@ const About: React.FC = () => {
           </div>
 
           {/* Leadership Section */}
-          {/* <div className="text-center mb-16 animate-fade-in-up">
+          <div className="text-center mb-16 animate-fade-in-up">
             <h2 className="text-4xl font-light text-blue-900 mb-4">Our Leadership Team</h2>
             <div className="w-24 h-1 bg-blue-600 mx-auto rounded-full"></div>
-          </div> */}
+          </div>
 
-          {/* <div className="flex justify-center gap-12 flex-wrap mb-24">
+          <div className="flex justify-center gap-12 flex-wrap mb-24">
             {teamMembers.map((member, index) => (
               <div
                 key={index}
-                className="medical-glass rounded-[40px] overflow-hidden hover:shadow-2xl transition-all duration-500 w-[400px] group animate-fade-in-up"
+                className="relative bg-white rounded-[40px] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_50px_rgba(37,99,235,0.15)] hover:-translate-y-2 transition-all duration-500 w-[400px] group animate-fade-in-up border border-gray-100"
                 style={{ animationDelay: `${index * 0.2}s` }}
               >
-                <div
-                  className="h-72 bg-gray-100 bg-cover bg-center group-hover:scale-105 transition-transform duration-700"
-                  style={{ backgroundImage: member.image ? `url(${member.image})` : 'none' }}
-                >
-                  {!member.image && (
-                    <div className="w-full h-full flex items-center justify-center text-blue-100 italic">
+                <div className="h-[340px] w-full overflow-hidden relative bg-blue-50/50">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  {member.image ? (
+                    <img
+                      src={member.image}
+                      alt={member.name}
+                      className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700 ease-out"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-blue-200/50 italic bg-gradient-to-br from-blue-50 to-indigo-50/50">
                       Leadership Portrait
                     </div>
                   )}
+                  {/* Decorative Elements */}
+                  <div className="absolute top-4 right-4 w-12 h-12 bg-white/10 backdrop-blur-md rounded-full border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 z-20"></div>
+                  <div className="absolute top-8 right-8 w-4 h-4 bg-white/20 backdrop-blur-md rounded-full border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-200 z-20"></div>
                 </div>
-                <div className="p-10">
-                  <h3 className="text-2xl font-light text-blue-900 mb-2">{member.name}</h3>
-                  <p className="text-blue-500 font-bold text-xs uppercase tracking-widest mb-6">{member.role}</p>
-                  <p className="text-sm text-gray-500 leading-relaxed font-light text-justify">{member.bio}</p>
+
+                <div className="p-10 bg-gradient-to-b from-white to-blue-50/20 relative z-20">
+                  <div className="absolute -top-10 right-10 bg-blue-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/30 rotate-12 group-hover:rotate-0 group-hover:bg-blue-700 transition-all duration-500 z-30">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-300">{member.name}</h3>
+                  <div className="h-1 w-12 bg-blue-600 rounded-full mb-6 group-hover:w-24 transition-all duration-500"></div>
+                  <p className="text-blue-600 font-semibold text-xs uppercase tracking-[0.2em] mb-6 leading-relaxed">{member.role}</p>
+
+                  <div className="flex items-center gap-4 mt-auto">
+                    {member.email && (
+                      <a href={member.email} className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white transition-all duration-300 shadow-sm">
+                        <Mail size={18} />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
-          </div> */}
+          </div>
         </div>
       </section>
 

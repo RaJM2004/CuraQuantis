@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Mail, Phone, MapPin, ArrowUp } from 'lucide-react';
+import { Mail, Phone, MapPin, ArrowUp, Linkedin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
@@ -27,6 +27,7 @@ const Footer = () => {
     'Company': [
       { name: 'About Us', path: '/about' },
       { name: 'Insights', path: '/insights' },
+      { name: 'Academy', path: 'https://academy.genquantaa.com/course/curaquantis-course', isExternal: true },
       { name: 'Contact', path: '/contact' }
     ]
     // 'Resources': [
@@ -55,8 +56,8 @@ const Footer = () => {
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 <Mail className="w-4 h-4 text-blue-600" strokeWidth={1} />
-                <a href="mailto:ashwin@curaquantis.com" className="minimal-text hover:text-blue-900 transition-colors duration-300">
-                  ashwin@curaquantis.com
+                <a href="mailto:support@curaquantis.com" className="minimal-text hover:text-blue-900 transition-colors duration-300">
+                  support@curaquantis.com
                 </a>
               </div>
               <div className="flex items-center space-x-3">
@@ -116,12 +117,22 @@ const Footer = () => {
             ©2026 CuraQuantis Health Clinics Pvt Ltd. All rights reserved. | A Subsidiary of GENQUANTIS PVT. LTD. (Holding Company)
           </div>
 
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-4">
+            <a
+              href="https://www.linkedin.com/company/curaquantis-health-clinics-pvt-ltd/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border border-blue-200 p-2 rounded-full hover:bg-blue-50 transition-all duration-300 group"
+              aria-label="LinkedIn"
+            >
+              <Linkedin className="w-4 h-4 text-blue-600 group-hover:fill-blue-600 transition-colors" strokeWidth={1.5} />
+            </a>
             <button
               onClick={scrollToTop}
-              className="border border-blue-200 p-2 rounded-full hover:bg-blue-50 transition-all duration-300"
+              className="border border-blue-200 p-2 rounded-full hover:bg-blue-50 transition-all duration-300 group"
+              aria-label="Scroll to top"
             >
-              <ArrowUp className="w-4 h-4 text-blue-600" strokeWidth={1} />
+              <ArrowUp className="w-4 h-4 text-blue-600 group-hover:-translate-y-1 transition-transform" strokeWidth={1.5} />
             </button>
           </div>
         </div>

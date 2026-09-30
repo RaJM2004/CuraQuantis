@@ -59,7 +59,7 @@ const ContactSection = () => {
     {
       icon: Mail,
       title: 'Email Us',
-      value: 'ashwin@curaquantis.com',
+      value: 'support@curaquantis.com',
       description: 'Get in touch for AI solutions'
     },
     {

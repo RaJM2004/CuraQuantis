@@ -51,6 +51,7 @@ const Navbar = () => {
   const navItems = [
     { name: 'CuraVoice AI', href: '/insights' },
     { name: 'Demo Center', href: '/demo-center' },
+    { name: 'Partner & Investor Portal', href: '/partner-portal', isHighlight: true },
     { name: 'About', href: '/about' }
   ];
 
@@ -59,23 +60,25 @@ const Navbar = () => {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md' : 'bg-white/80 backdrop-blur-md'}`}
     >
       <div className="container mx-auto px-6">
-        <div className="flex items-center justify-between h-20">
-          <div className="flex items-center">
-            <Link to="/">
-              <img src="/curaquantis.png" alt="Logo" className="h-16 w-auto object-contain" />
+        <div className="flex items-center justify-between h-20 max-w-7xl mx-auto">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 mr-3 xl:mr-6">
+            <Link to="/" className="flex items-center gap-2 sm:gap-3">
+              <img src="/logo.png" alt="Main Logo" className="h-9 sm:h-10 w-auto object-contain flex-shrink-0" />
+              <div className="hidden sm:block h-6 w-px bg-gray-300 flex-shrink-0"></div>
+              <img src="/curaquantis.png" alt="CuraQuantis Logo" className="h-9 sm:h-11 w-auto object-contain flex-shrink-0" />
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center space-x-12">
+          <div className="hidden lg:flex items-center gap-2 xl:gap-3.5 2xl:gap-5 text-xs xl:text-sm flex-nowrap">
             {/* Solutions Dropdown */}
-            <div className="relative group">
+            <div className="relative group flex-shrink-0">
               <button
-                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
+                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light whitespace-nowrap py-1"
                 onClick={() => setIsSolutionsOpen(!isSolutionsOpen)}
                 onMouseEnter={() => setIsSolutionsOpen(true)}
               >
-                HealthTech AI
-                <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${isSolutionsOpen ? 'rotate-180' : ''}`} />
+                <span>HealthTech AI</span>
+                <ChevronDown className={`ml-1 w-3.5 h-3.5 transition-transform duration-300 ${isSolutionsOpen ? 'rotate-180' : ''}`} />
               </button>
               {isSolutionsOpen && (
                 <div
@@ -101,52 +104,15 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* Products Dropdown
-            <div className="relative group">
-              <button
-                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
-                onClick={() => setIsProductsOpen(!isProductsOpen)}
-                onMouseEnter={() => setIsProductsOpen(true)}
-              >
-                AI Products
-                <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${isProductsOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {isProductsOpen && (
-                <div
-                  className="absolute top-full left-1/2 -translate-x-1/2 w-[600px] mt-4"
-                  onMouseLeave={() => setIsProductsOpen(false)}
-                >
-                  <div className="bg-white rounded-[40px] shadow-2xl border border-blue-50 p-10 animate-fade-in-up">
-                    <div className="grid grid-cols-1 gap-4">
-                      {products.map((product) => (
-                        <Link
-                          key={product.id}
-                          to={product.path ? product.path : `/products#${product.id}`}
-                          className="group/item flex items-center justify-between p-4 rounded-2xl hover:bg-blue-50 transition-all duration-300"
-                          onClick={() => setIsProductsOpen(false)}
-                        >
-                          <span className="text-gray-700 font-light group-hover/item:text-blue-900">{product.name}</span>
-                          <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-all">
-                            <ChevronDown className="-rotate-90 w-3 h-3 text-blue-600" />
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            */}
-
             {/* Capabilities Dropdown */}
-            <div className="relative group">
+            <div className="relative group flex-shrink-0">
               <button
-                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
+                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light whitespace-nowrap py-1"
                 onClick={() => setIsCapabilitiesOpen(!isCapabilitiesOpen)}
                 onMouseEnter={() => setIsCapabilitiesOpen(true)}
               >
-                Capabilities
-                <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${isCapabilitiesOpen ? 'rotate-180' : ''}`} />
+                <span>Capabilities</span>
+                <ChevronDown className={`ml-1 w-3.5 h-3.5 transition-transform duration-300 ${isCapabilitiesOpen ? 'rotate-180' : ''}`} />
               </button>
               {isCapabilitiesOpen && (
                 <div
@@ -192,26 +158,34 @@ const Navbar = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
+                className={
+                  item.isHighlight
+                    ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium text-xs shadow-sm whitespace-nowrap flex-shrink-0 transition-all transform hover:-translate-y-0.5"
+                    : "text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light whitespace-nowrap flex-shrink-0"
+                }
               >
-                {item.name}
+                {item.isHighlight && <span className="w-2 h-2 rounded-full bg-cyan-300 animate-pulse flex-shrink-0" />}
+                <span>{item.name}</span>
               </Link>
             ))}
             <a
               href="/360deg.html"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
+              className="text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light whitespace-nowrap flex-shrink-0"
             >
               Virtual Clinic Tour
             </a>
-            <Link to="/contact" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full transition-all duration-300 font-light">
+            <Link to="/portal/login" className="text-gray-700 hover:text-blue-600 font-medium text-xs px-3 py-1.5 rounded-full border border-gray-200 hover:border-blue-400 whitespace-nowrap flex-shrink-0 transition-all">
+              Portal Sign In
+            </Link>
+            <Link to="/contact" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full transition-all duration-300 text-xs xl:text-sm font-medium whitespace-nowrap flex-shrink-0 shadow-sm">
               Get Started
             </Link>
           </div>
 
           <button
-            className="md:hidden text-gray-900"
+            className="lg:hidden text-gray-900 p-2"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -219,7 +193,7 @@ const Navbar = () => {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="md:hidden bg-white shadow-lg rounded-lg mt-2 p-6 max-h-[80vh] overflow-y-auto">
+          <div className="lg:hidden bg-white shadow-xl rounded-2xl mt-2 p-6 max-h-[80vh] overflow-y-auto border border-slate-100 animate-fade-in-up">
             {/* Mobile Solutions */}
             <div className="py-3">
               <button
@@ -340,7 +314,11 @@ const Navbar = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className="block py-3 text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
+                className={
+                  item.isHighlight
+                    ? "block py-3 px-4 my-2 text-center rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-sm shadow-md"
+                    : "block py-3 text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
+                }
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {item.name}
@@ -353,9 +331,16 @@ const Navbar = () => {
               className="block py-3 text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              360deg View
+              Virtual Clinic Tour (360°)
             </a>
-            <Link to="/contact" className="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full mt-4 transition-all duration-300 font-light">
+            <Link 
+              to="/portal/login" 
+              className="block py-3 px-4 my-2 text-center rounded-xl border border-slate-200 text-slate-800 font-semibold text-sm hover:border-blue-500 hover:text-blue-600 transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Partner & Admin Portal Sign In
+            </Link>
+            <Link to="/contact" className="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full mt-2 transition-all duration-300 font-light block text-center">
               Get Started
             </Link>
           </div>

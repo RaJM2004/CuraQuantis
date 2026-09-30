@@ -39,6 +39,11 @@ import Robots from "./pages/industries/Robots";
 import Drones from "./pages/industries/Drones";
 import DemoCenter from "./pages/DemoCenter";
 import ScrollToTop from "./components/ScrollToTop";
+import PartnerPortalHub from "./pages/partner/PartnerPortalHub";
+import ApplyPathway from "./pages/partner/ApplyPathway";
+import PartnerDashboard from "./pages/partner/PartnerDashboard";
+import ManagementDashboard from "./pages/partner/ManagementDashboard";
+import PortalLogin from "./pages/partner/PortalLogin";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +88,12 @@ function App() {
             <Route path="/industries/insurance" element={<Insurance />} />
             <Route path="/industries/robots" element={<Robots />} />
             <Route path="/industries/drones" element={<Drones />} />
+            <Route path="/partner-portal" element={<PartnerPortalHub />} />
+            <Route path="/apply" element={<ApplyPathway />} />
+            <Route path="/apply/:pathway" element={<ApplyPathway />} />
+            <Route path="/portal/partner-dashboard" element={<PartnerDashboard />} />
+            <Route path="/portal/admin" element={<ManagementDashboard />} />
+            <Route path="/portal/login" element={<PortalLogin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
