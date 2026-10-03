@@ -44,6 +44,7 @@ import ApplyPathway from "./pages/partner/ApplyPathway";
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import ManagementDashboard from "./pages/partner/ManagementDashboard";
 import PortalLogin from "./pages/partner/PortalLogin";
+import Workflows from "./pages/Workflows";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/demo-center" element={<DemoCenter />} />
+            <Route path="/workflows" element={<Workflows />} />
             <Route path="/solutions/remote-monitoring" element={<RemoteMonitoring />} />
             <Route path="/solutions/medical-billing" element={<MedicalBilling />} />
             <Route path="/solutions/lab-integration" element={<LabIntegration />} />
