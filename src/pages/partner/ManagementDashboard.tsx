@@ -1143,10 +1143,10 @@ export const ManagementDashboard: React.FC = () => {
 
       {/* Document Inspection & Scrutiny Viewer Modal */}
       {previewDoc && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 max-h-[92vh] flex flex-col space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 max-h-[92vh] flex flex-col overflow-y-auto space-y-3 my-auto">
             {/* Modal Header */}
-            <div className="flex items-start justify-between pb-3 border-b border-slate-200">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-200 flex-shrink-0">
               <div className="space-y-1">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center">
@@ -1180,12 +1180,14 @@ export const ManagementDashboard: React.FC = () => {
             </div>
 
             {/* Document Body Preview Area */}
-            <div className="flex-grow overflow-auto p-4 bg-slate-100/70 rounded-2xl flex flex-col items-center justify-center min-h-[420px] max-h-[64vh] border border-slate-200/80 relative">
+            <div className={`flex-grow overflow-auto p-3 sm:p-4 bg-slate-100/70 rounded-2xl flex flex-col items-center justify-center border border-slate-200/80 relative transition-all duration-200 ${
+              isRejectingDoc ? 'min-h-[160px] max-h-[30vh]' : 'min-h-[280px] max-h-[58vh]'
+            }`}>
               {previewDoc.fileDataUrl ? (
                 previewDoc.fileDataUrl.startsWith('data:image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(previewDoc.fileName) ? (
                   <div className="flex flex-col items-center w-full h-full">
                     {/* Image Inspection Toolbar */}
-                    <div className="w-full flex flex-wrap items-center justify-between gap-2 pb-2 mb-2 border-b border-slate-200 text-xs">
+                    <div className="w-full flex flex-wrap items-center justify-between gap-2 pb-2 mb-2 border-b border-slate-200 text-xs flex-shrink-0">
                       <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
                         <button
                           type="button"
@@ -1240,7 +1242,9 @@ export const ManagementDashboard: React.FC = () => {
                     </div>
 
                     {/* Viewport */}
-                    <div className="w-full flex-grow overflow-auto flex items-center justify-center p-3 bg-white/60 rounded-2xl min-h-[350px]">
+                    <div className={`w-full flex-grow overflow-auto flex items-center justify-center p-2 bg-white/60 rounded-xl ${
+                      isRejectingDoc ? 'min-h-[110px]' : 'min-h-[220px]'
+                    }`}>
                       <img
                         src={previewDoc.fileDataUrl}
                         alt={previewDoc.fileName}
@@ -1248,14 +1252,14 @@ export const ManagementDashboard: React.FC = () => {
                           transform: `scale(${imgZoom}) rotate(${imgRotation}deg)`,
                           transition: 'transform 0.15s ease-out'
                         }}
-                        className="max-h-[50vh] max-w-full object-contain rounded-xl shadow-lg border border-slate-200 bg-white"
+                        className={`${isRejectingDoc ? 'max-h-[24vh]' : 'max-h-[48vh]'} max-w-full object-contain rounded-xl shadow-lg border border-slate-200 bg-white`}
                       />
                     </div>
                   </div>
                 ) : previewDoc.fileDataUrl.startsWith('data:application/pdf') || /\.pdf$/i.test(previewDoc.fileName) ? (
                   <div className="flex flex-col w-full h-full">
                     {/* PDF Toolbar */}
-                    <div className="w-full flex items-center justify-between pb-2 mb-2 border-b border-slate-200 text-xs">
+                    <div className="w-full flex items-center justify-between pb-2 mb-2 border-b border-slate-200 text-xs flex-shrink-0">
                       <div className="flex items-center gap-2 text-slate-700">
                         <FileText className="w-4 h-4 text-blue-600" />
                         <span className="font-bold">{previewDoc.fileName}</span>
@@ -1275,13 +1279,13 @@ export const ManagementDashboard: React.FC = () => {
                     <iframe
                       src={previewDoc.fileDataUrl}
                       title={previewDoc.fileName}
-                      className="w-full h-[54vh] rounded-2xl border border-slate-300 shadow-sm bg-white"
+                      className={`w-full ${isRejectingDoc ? 'h-[28vh]' : 'h-[50vh]'} rounded-xl border border-slate-300 shadow-sm bg-white transition-all`}
                     />
                   </div>
                 ) : (
-                  <div className="text-center p-8 bg-white rounded-2xl border border-slate-200 max-w-md shadow-sm space-y-4">
-                    <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-200">
-                      <FileText className="w-8 h-8" />
+                  <div className="text-center p-6 bg-white rounded-2xl border border-slate-200 max-w-md shadow-sm space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-200">
+                      <FileText className="w-6 h-6" />
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900 text-sm">{previewDoc.fileName}</h4>
@@ -1298,11 +1302,11 @@ export const ManagementDashboard: React.FC = () => {
                   </div>
                 )
               ) : (
-                <div className="flex flex-col items-center justify-center text-center p-8 bg-white rounded-3xl border border-slate-200 max-w-lg shadow-sm space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-inner">
-                    <FileText className="w-8 h-8" />
+                <div className="flex flex-col items-center justify-center text-center p-6 bg-white rounded-3xl border border-slate-200 max-w-lg shadow-sm space-y-3">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-inner">
+                    <FileText className="w-7 h-7" />
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
                       <ShieldCheck className="w-3 h-3 text-blue-600" />
                       <span>Applicant Attached Record</span>
@@ -1315,7 +1319,7 @@ export const ManagementDashboard: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="w-full bg-slate-50 rounded-2xl p-4 border border-slate-200 text-left text-xs space-y-2">
+                  <div className="w-full bg-slate-50 rounded-2xl p-3 border border-slate-200 text-left text-xs space-y-1.5">
                     <div className="flex justify-between items-center text-slate-600">
                       <span className="font-semibold text-slate-500">Document Type:</span>
                       <span className="font-medium text-slate-900 text-right">{previewDoc.name}</span>
@@ -1350,19 +1354,19 @@ export const ManagementDashboard: React.FC = () => {
             </div>
 
             {/* Document Scrutiny Action Bar */}
-            <div className="flex flex-col gap-3 pt-3 border-t border-slate-200">
+            <div className="flex-shrink-0 flex flex-col gap-3 pt-3 border-t border-slate-200">
               {/* Document Rejection Reason Form (When Admin Clicks Reject) */}
               {isRejectingDoc ? (
-                <div className="w-full bg-rose-50/90 border-2 border-rose-300 rounded-2xl p-4 space-y-3 animate-fade-in">
+                <div className="w-full bg-rose-50 border-2 border-rose-300 rounded-2xl p-3.5 sm:p-4 space-y-2.5 animate-fade-in shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-rose-900 flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4 text-rose-600" />
+                      <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
                       <span>Select or Enter Rejection Reason for "{previewDoc.name}":</span>
                     </span>
                     <button
                       type="button"
                       onClick={() => setIsRejectingDoc(false)}
-                      className="text-xs text-slate-500 hover:text-slate-800 font-semibold"
+                      className="text-xs text-slate-500 hover:text-slate-800 font-semibold px-2 py-0.5 rounded-lg hover:bg-rose-100"
                     >
                       ✕ Cancel
                     </button>
@@ -1383,7 +1387,7 @@ export const ManagementDashboard: React.FC = () => {
                         onClick={() => setDocRejectReason(chip)}
                         className={`px-3 py-1 rounded-xl text-[11px] font-semibold transition-all ${
                           docRejectReason === chip
-                            ? 'bg-rose-600 text-white shadow-sm'
+                            ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400/40'
                             : 'bg-white text-slate-700 hover:bg-rose-100/70 border border-rose-200'
                         }`}
                       >
@@ -1397,10 +1401,10 @@ export const ManagementDashboard: React.FC = () => {
                     value={docRejectReason}
                     onChange={(e) => setDocRejectReason(e.target.value)}
                     placeholder="Enter specific instructions or reason for applicant..."
-                    className="w-full px-3.5 py-2 rounded-xl border border-rose-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    className="w-full px-3.5 py-2 rounded-xl border border-rose-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-inner"
                   />
 
-                  <div className="flex justify-end gap-2 pt-1">
+                  <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
                     <button
                       type="button"
                       onClick={() => setIsRejectingDoc(false)}
@@ -1411,7 +1415,7 @@ export const ManagementDashboard: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleUpdateDocumentStatus(previewDoc.id, 'rejected', docRejectReason)}
-                      className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
+                      className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                       <span>Confirm Rejection &amp; Flag for Re-upload</span>

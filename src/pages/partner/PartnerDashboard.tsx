@@ -1289,17 +1289,39 @@ export const PartnerDashboard: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-              {previewDoc.fileDataUrl ? (
-                <a
-                  href={previewDoc.fileDataUrl}
-                  download={previewDoc.fileName}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition-all"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download File</span>
-                </a>
-              ) : <div />}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200">
+              <div className="flex items-center gap-2">
+                {previewDoc.fileDataUrl && (
+                  <a
+                    href={previewDoc.fileDataUrl}
+                    download={previewDoc.fileName}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition-all"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Download File</span>
+                  </a>
+                )}
+
+                {previewDoc.status === 'rejected' && (
+                  <label className="cursor-pointer px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-md shadow-rose-500/20 transition-all">
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    <span>Re-upload Corrected File</span>
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleReuploadFile(previewDoc.id, file);
+                          setPreviewDoc(null);
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
 
               <button
                 type="button"
