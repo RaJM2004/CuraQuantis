@@ -48,8 +48,8 @@ const Contact: React.FC = () => {
 
     try {
       const result = await emailjs.send(
-        'service_t6ssh7g',
-        'template_3tqp1nf',
+        'service_dnsi8mn',
+        'template_mx5w5r8',
         {
           from_name: formData.name,
           from_email: formData.email,
@@ -57,7 +57,7 @@ const Contact: React.FC = () => {
           message: formData.message,
           location: formData.location
         },
-        'CG70ICmTB8Mb4O6gi'
+        '32yZnVZ4OgNOo6tGM'
       );
 
       if (result.status === 200) {

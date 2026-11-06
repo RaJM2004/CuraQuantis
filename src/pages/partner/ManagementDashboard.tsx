@@ -7,6 +7,7 @@ import { AuthStore } from '@/lib/authStore';
 import { IndiaTerritoryMap } from '@/components/territory/IndiaTerritoryMap';
 import { PartnerApplication, ApplicationStatus, InvestorLead } from '@/types/partnerPortal';
 import { buildMailtoUrl, CURAQUANTIS_SUPPORT_EMAIL } from '@/lib/emailNotification';
+import { DocumentVault } from '@/lib/documentStorage';
 import { 
   ShieldCheck, 
   Users, 
@@ -32,7 +33,17 @@ import {
   Phone,
   Check,
   X,
-  UserCheck
+  UserCheck,
+  Eye,
+  Loader2,
+  ExternalLink,
+  FileCheck,
+  UploadCloud,
+  Image as ImageIcon,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Maximize2
 } from 'lucide-react';
 
 export const ManagementDashboard: React.FC = () => {
@@ -61,6 +72,143 @@ export const ManagementDashboard: React.FC = () => {
   const [leadReviewNotes, setLeadReviewNotes] = useState<string>('');
   const [leadUpdateFeedback, setLeadUpdateFeedback] = useState<string>('');
 
+  // Document Inspection Modal State
+  const [previewDoc, setPreviewDoc] = useState<{
+    id: string;
+    name: string;
+    fileName: string;
+    fileSize?: string;
+    uploadedAt?: string;
+    fileDataUrl?: string;
+    mimeType?: string;
+    status: string;
+    rejectionReason?: string;
+  } | null>(null);
+  const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
+
+  // High-Resolution Inspection & Rejection Controls
+  const [imgZoom, setImgZoom] = useState<number>(1);
+  const [imgRotation, setImgRotation] = useState<number>(0);
+  const [isRejectingDoc, setIsRejectingDoc] = useState<boolean>(false);
+  const [docRejectReason, setDocRejectReason] = useState<string>('');
+
+  const handlePreviewDocument = async (doc: any) => {
+    setLoadingDocId(doc.id);
+    setImgZoom(1);
+    setImgRotation(0);
+    setIsRejectingDoc(false);
+    setDocRejectReason('');
+
+    let dataUrl = doc.fileDataUrl;
+    let mime = doc.mimeType;
+
+    // 1. If not yet in memory, fetch full application directly from MongoDB
+    if (!dataUrl && selectedApp) {
+      try {
+        const fullApp = await PartnerStore.fetchApplicationByIdFromMongoDB(selectedApp.id);
+        if (fullApp) {
+          const remoteDoc = (fullApp.documents || []).find(d => d.id === doc.id);
+          if (remoteDoc?.fileDataUrl) {
+            dataUrl = remoteDoc.fileDataUrl;
+            mime = remoteDoc.mimeType || mime;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not read from MongoDB endpoint', e);
+      }
+    }
+
+    // 2. Search DocumentVault (IndexedDB) with robust key resolution
+    if (!dataUrl && selectedApp) {
+      try {
+        const cached = await DocumentVault.findDocument([
+          `${selectedApp.id}_${doc.id}`,
+          doc.id,
+          doc.fileName,
+          doc.name
+        ]);
+
+        if (cached?.fileDataUrl) {
+          dataUrl = cached.fileDataUrl;
+          mime = cached.mimeType || mime;
+        }
+      } catch (e) {
+        console.warn('Could not read from vault', e);
+      }
+    }
+
+    setLoadingDocId(null);
+    setPreviewDoc({
+      id: doc.id,
+      name: doc.name,
+      fileName: doc.fileName || `${doc.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+      fileSize: doc.fileSize || 'Attached File',
+      uploadedAt: doc.uploadedAt || new Date().toISOString().split('T')[0],
+      fileDataUrl: dataUrl,
+      mimeType: mime,
+      status: doc.status || 'verified',
+      rejectionReason: doc.rejectionReason
+    });
+  };
+
+  const handleUpdateDocumentStatus = (docId: string, newStatus: 'verified' | 'pending' | 'rejected', reason?: string) => {
+    if (!selectedApp) return;
+
+    const docItem = selectedApp.documents.find(d => d.id === docId);
+    const docName = docItem?.name || previewDoc?.name || 'Document';
+
+    const finalReason = newStatus === 'rejected' 
+      ? (reason || docRejectReason || 'Verification rejected by administrator during compliance audit') 
+      : undefined;
+
+    const auditText = newStatus === 'verified'
+      ? `Document Scrutinized & Verified: ${docName}`
+      : newStatus === 'rejected'
+      ? `Document Rejected: ${docName} — Reason: ${finalReason}`
+      : `Document Marked Pending: ${docName}`;
+
+    const newAudit = {
+      id: `log-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      action: newStatus === 'verified' ? 'Document Verified' : newStatus === 'rejected' ? 'Document Rejected' : 'Document Marked Pending',
+      performedBy: adminName || 'Compliance Directorate',
+      details: auditText
+    };
+
+    const updatedDocs = selectedApp.documents.map(d => {
+      if (d.id === docId) {
+        return { 
+          ...d, 
+          status: newStatus,
+          rejectionReason: finalReason
+        };
+      }
+      return d;
+    });
+
+    const updatedApp: PartnerApplication = {
+      ...selectedApp,
+      documents: updatedDocs,
+      auditLogs: [newAudit, ...(selectedApp.auditLogs || [])],
+      updatedAt: new Date().toISOString()
+    };
+
+    setSelectedApp(updatedApp);
+    PartnerStore.saveApplication(updatedApp);
+    setApplications(prev => prev.map(a => a.id === updatedApp.id ? updatedApp : a));
+
+    if (previewDoc && previewDoc.id === docId) {
+      setPreviewDoc(prev => prev ? { 
+        ...prev, 
+        status: newStatus,
+        rejectionReason: finalReason
+      } : null);
+    }
+
+    setIsRejectingDoc(false);
+    setDocRejectReason('');
+  };
+
   useEffect(() => {
     // Executive authentication guard
     const user = AuthStore.getCurrentUser();
@@ -73,13 +221,21 @@ export const ManagementDashboard: React.FC = () => {
     }
 
     loadData();
-    // Asynchronously pull latest from MongoDB
+    // Asynchronously pull latest from MongoDB (with full documents & dataUrls intact)
     PartnerStore.fetchFromMongoDB().then((remoteApps) => {
       if (remoteApps && remoteApps.length > 0) {
         setApplications([...remoteApps]);
-        if (!selectedApp) {
-          setSelectedApp(remoteApps[0]);
-        }
+        setSelectedApp(prev => {
+          if (!prev) return remoteApps[0];
+          const found = remoteApps.find(a => a.id === prev.id);
+          return found || remoteApps[0];
+        });
+      }
+    });
+
+    PartnerStore.fetchLeadsFromMongoDB().then((remoteLeads) => {
+      if (remoteLeads && remoteLeads.length > 0) {
+        setLeads([...remoteLeads]);
       }
     });
   }, []);
@@ -509,42 +665,96 @@ export const ManagementDashboard: React.FC = () => {
 
                     {/* Documents Scrutinized */}
                     <div className="space-y-3">
-                      <h4 className="font-bold text-slate-800 uppercase tracking-wider text-xs flex items-center justify-between">
-                        <span>Document Scrutiny ({selectedApp.documents.length})</span>
-                        <span className="text-[11px] font-normal text-slate-500">Encrypted MCA & UIDAI verification</span>
-                      </h4>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h4 className="font-bold text-slate-800 uppercase tracking-wider text-xs flex items-center gap-2">
+                          <FileCheck className="w-4 h-4 text-blue-600" />
+                          <span>Document Scrutiny & KYC Vault ({selectedApp.documents.length})</span>
+                        </h4>
+                        <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                          {selectedApp.documents.filter(d => d.status === 'verified').length} / {selectedApp.documents.length} Verified
+                        </span>
+                      </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-2.5">
                         {selectedApp.documents.map(doc => (
-                          <div key={doc.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                            <div className="flex items-center gap-2.5">
-                              <FileText className="w-4 h-4 text-blue-600" />
-                              <div>
-                                <span className="font-semibold text-slate-900 block">{doc.name}</span>
-                                <span className="text-[11px] text-slate-500">{doc.fileName || 'Pending upload'}</span>
+                          <div 
+                            key={doc.id} 
+                            className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100/70 border border-slate-200/90 text-xs transition-all gap-3"
+                          >
+                            <div className="flex items-start sm:items-center gap-3 min-w-0">
+                              <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0">
+                                <FileText className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-bold text-slate-900 truncate">{doc.name}</span>
+                                  {doc.isMandatory && (
+                                    <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+                                      Mandatory
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 truncate">
+                                  <span className="font-mono text-slate-700 truncate">{doc.fileName || 'Pending applicant attachment'}</span>
+                                  {doc.fileSize && <span>• {doc.fileSize}</span>}
+                                  {doc.uploadedAt && <span>• {doc.uploadedAt}</span>}
+                                </div>
+                                {doc.status === 'rejected' && doc.rejectionReason && (
+                                  <div className="flex items-center gap-1.5 mt-1 text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 w-fit">
+                                    <AlertCircle className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
+                                    <span>Reason: {doc.rejectionReason}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                doc.status === 'verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+
+                            <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
+                              {/* Status Badge */}
+                              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider ${
+                                doc.status === 'verified' 
+                                  ? 'bg-emerald-100/80 text-emerald-800 border border-emerald-200' 
+                                  : doc.status === 'rejected'
+                                  ? 'bg-rose-100/80 text-rose-800 border border-rose-200'
+                                  : 'bg-amber-100/80 text-amber-800 border border-amber-200'
                               }`}>
                                 {doc.status}
                               </span>
-                              {doc.fileName && (
-                                doc.fileDataUrl ? (
-                                  <a
-                                    href={doc.fileDataUrl}
-                                    download={doc.fileName}
-                                    className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-[11px] flex items-center gap-1 transition-colors"
-                                  >
-                                    <Download className="w-3 h-3" />
-                                    <span>Download</span>
-                                  </a>
+
+                              {/* Preview / View Document Button */}
+                              <button
+                                type="button"
+                                onClick={() => handlePreviewDocument(doc)}
+                                disabled={loadingDocId === doc.id}
+                                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                                title="Click to open and inspect this document"
+                              >
+                                {loadingDocId === doc.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                 ) : (
-                                  <span className="text-slate-400 font-medium text-[11px]">
-                                    Attached
-                                  </span>
-                                )
+                                  <Eye className="w-3.5 h-3.5" />
+                                )}
+                                <span>View Document</span>
+                              </button>
+
+                              {/* Quick Mark Verified Toggle */}
+                              {doc.status !== 'verified' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateDocumentStatus(doc.id, 'verified')}
+                                  className="p-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors"
+                                  title="Approve / Mark Verified"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateDocumentStatus(doc.id, 'pending')}
+                                  className="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors"
+                                  title="Mark as Pending Review"
+                                >
+                                  <AlertCircle className="w-3.5 h-3.5" />
+                                </button>
                               )}
                             </div>
                           </div>
@@ -927,6 +1137,345 @@ export const ManagementDashboard: React.FC = () => {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Document Inspection & Scrutiny Viewer Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 max-h-[92vh] flex flex-col space-y-4">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-3 border-b border-slate-200">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-extrabold text-slate-900 text-base sm:text-lg">
+                    {previewDoc.name}
+                  </h3>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                    previewDoc.status === 'verified'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      : previewDoc.status === 'rejected'
+                      ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                      : 'bg-amber-100 text-amber-800 border border-amber-200'
+                  }`}>
+                    {previewDoc.status}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-mono">
+                  Filename: <span className="font-semibold text-slate-800">{previewDoc.fileName}</span> • {previewDoc.fileSize || 'Attached'} • Date: {previewDoc.uploadedAt}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPreviewDoc(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors flex-shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Document Body Preview Area */}
+            <div className="flex-grow overflow-auto p-4 bg-slate-100/70 rounded-2xl flex flex-col items-center justify-center min-h-[420px] max-h-[64vh] border border-slate-200/80 relative">
+              {previewDoc.fileDataUrl ? (
+                previewDoc.fileDataUrl.startsWith('data:image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(previewDoc.fileName) ? (
+                  <div className="flex flex-col items-center w-full h-full">
+                    {/* Image Inspection Toolbar */}
+                    <div className="w-full flex flex-wrap items-center justify-between gap-2 pb-2 mb-2 border-b border-slate-200 text-xs">
+                      <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                        <button
+                          type="button"
+                          onClick={() => setImgZoom(z => Math.max(0.5, z - 0.25))}
+                          className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-700 transition-colors"
+                          title="Zoom Out (-)"
+                        >
+                          <ZoomOut className="w-4 h-4" />
+                        </button>
+                        <span className="font-mono text-[11px] font-bold px-2 text-slate-700 min-w-[42px] text-center">
+                          {Math.round(imgZoom * 100)}%
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setImgZoom(z => Math.min(3, z + 0.25))}
+                          className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-700 transition-colors"
+                          title="Zoom In (+)"
+                        >
+                          <ZoomIn className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setImgZoom(1); setImgRotation(0); }}
+                          className="px-2 py-1 text-[10px] font-bold text-slate-600 hover:text-slate-900 border-l border-slate-200"
+                          title="Reset View"
+                        >
+                          Reset
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setImgRotation(r => (r + 90) % 360)}
+                          className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-700 border-l border-slate-200 transition-colors flex items-center gap-1"
+                          title="Rotate 90 degrees"
+                        >
+                          <RotateCw className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-mono">{imgRotation}°</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={previewDoc.fileDataUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+                          title="Open full-resolution image in new browser tab"
+                        >
+                          <Maximize2 className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Fullscreen in New Tab</span>
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Viewport */}
+                    <div className="w-full flex-grow overflow-auto flex items-center justify-center p-3 bg-white/60 rounded-2xl min-h-[350px]">
+                      <img
+                        src={previewDoc.fileDataUrl}
+                        alt={previewDoc.fileName}
+                        style={{
+                          transform: `scale(${imgZoom}) rotate(${imgRotation}deg)`,
+                          transition: 'transform 0.15s ease-out'
+                        }}
+                        className="max-h-[50vh] max-w-full object-contain rounded-xl shadow-lg border border-slate-200 bg-white"
+                      />
+                    </div>
+                  </div>
+                ) : previewDoc.fileDataUrl.startsWith('data:application/pdf') || /\.pdf$/i.test(previewDoc.fileName) ? (
+                  <div className="flex flex-col w-full h-full">
+                    {/* PDF Toolbar */}
+                    <div className="w-full flex items-center justify-between pb-2 mb-2 border-b border-slate-200 text-xs">
+                      <div className="flex items-center gap-2 text-slate-700">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span className="font-bold">{previewDoc.fileName}</span>
+                        <span className="text-[11px] text-slate-500 font-mono">({previewDoc.fileSize || 'PDF'})</span>
+                      </div>
+                      <a
+                        href={previewDoc.fileDataUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+                        title="Open PDF in full browser window"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Open PDF in Full Window</span>
+                      </a>
+                    </div>
+                    <iframe
+                      src={previewDoc.fileDataUrl}
+                      title={previewDoc.fileName}
+                      className="w-full h-[54vh] rounded-2xl border border-slate-300 shadow-sm bg-white"
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center p-8 bg-white rounded-2xl border border-slate-200 max-w-md shadow-sm space-y-4">
+                    <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-200">
+                      <FileText className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">{previewDoc.fileName}</h4>
+                      <p className="text-xs text-slate-500 mt-1">Binary document attached and ready for offline inspection</p>
+                    </div>
+                    <a
+                      href={previewDoc.fileDataUrl}
+                      download={previewDoc.fileName}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow transition-all"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download Original File</span>
+                    </a>
+                  </div>
+                )
+              ) : (
+                <div className="flex flex-col items-center justify-center text-center p-8 bg-white rounded-3xl border border-slate-200 max-w-lg shadow-sm space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-inner">
+                    <FileText className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                      <ShieldCheck className="w-3 h-3 text-blue-600" />
+                      <span>Applicant Attached Record</span>
+                    </div>
+                    <h4 className="font-extrabold text-slate-900 text-base">
+                      {previewDoc.fileName}
+                    </h4>
+                    <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
+                      Document attached by applicant <strong>{selectedApp?.individual?.fullName}</strong> ({selectedApp?.id}) during digital application submission.
+                    </p>
+                  </div>
+
+                  <div className="w-full bg-slate-50 rounded-2xl p-4 border border-slate-200 text-left text-xs space-y-2">
+                    <div className="flex justify-between items-center text-slate-600">
+                      <span className="font-semibold text-slate-500">Document Type:</span>
+                      <span className="font-medium text-slate-900 text-right">{previewDoc.name}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-slate-600">
+                      <span className="font-semibold text-slate-500">File Size:</span>
+                      <span className="font-medium text-slate-900">{previewDoc.fileSize || 'Attached File'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-slate-600">
+                      <span className="font-semibold text-slate-500">Submission Date:</span>
+                      <span className="font-medium text-slate-900">{previewDoc.uploadedAt}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-slate-600">
+                      <span className="font-semibold text-slate-500">Scrutiny State:</span>
+                      <span className={`font-bold uppercase text-[10px] px-2 py-0.5 rounded-full ${
+                        previewDoc.status === 'verified'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : previewDoc.status === 'rejected'
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {previewDoc.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-slate-500">
+                    Review applicant disclosures and use the action buttons below to verify or reject this submission.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Document Scrutiny Action Bar */}
+            <div className="flex flex-col gap-3 pt-3 border-t border-slate-200">
+              {/* Document Rejection Reason Form (When Admin Clicks Reject) */}
+              {isRejectingDoc ? (
+                <div className="w-full bg-rose-50/90 border-2 border-rose-300 rounded-2xl p-4 space-y-3 animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-rose-900 flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 text-rose-600" />
+                      <span>Select or Enter Rejection Reason for "{previewDoc.name}":</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsRejectingDoc(false)}
+                      className="text-xs text-slate-500 hover:text-slate-800 font-semibold"
+                    >
+                      ✕ Cancel
+                    </button>
+                  </div>
+
+                  {/* Quick-select chips */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      'Illegible or blurry scan / photo',
+                      'Expired document / Validity lapsed',
+                      'Name mismatch with applicant profile',
+                      'Incomplete document (front/back missing)',
+                      'Wrong document type uploaded'
+                    ].map(chip => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => setDocRejectReason(chip)}
+                        className={`px-3 py-1 rounded-xl text-[11px] font-semibold transition-all ${
+                          docRejectReason === chip
+                            ? 'bg-rose-600 text-white shadow-sm'
+                            : 'bg-white text-slate-700 hover:bg-rose-100/70 border border-rose-200'
+                        }`}
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={docRejectReason}
+                    onChange={(e) => setDocRejectReason(e.target.value)}
+                    placeholder="Enter specific instructions or reason for applicant..."
+                    className="w-full px-3.5 py-2 rounded-xl border border-rose-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  />
+
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsRejectingDoc(false)}
+                      className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateDocumentStatus(previewDoc.id, 'rejected', docRejectReason)}
+                      className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Confirm Rejection &amp; Flag for Re-upload</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  {/* Document Approval / Reject Buttons */}
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateDocumentStatus(previewDoc.id, 'verified')}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
+                        previewDoc.status === 'verified'
+                          ? 'bg-emerald-600 text-white shadow-emerald-500/20 ring-2 ring-emerald-400/40'
+                          : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                      }`}
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>{previewDoc.status === 'verified' ? 'Document Verified ✓' : 'Approve & Mark Verified'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsRejectingDoc(true);
+                        setDocRejectReason(previewDoc.rejectionReason || 'Illegible or blurry scan / photo');
+                      }}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
+                        previewDoc.status === 'rejected'
+                          ? 'bg-rose-600 text-white shadow-rose-500/20 ring-2 ring-rose-400/40'
+                          : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+                      }`}
+                    >
+                      <X className="w-4 h-4" />
+                      <span>{previewDoc.status === 'rejected' ? 'Rejected ✗ (Click to Change)' : 'Reject Document ✗'}</span>
+                    </button>
+                  </div>
+
+                  {/* Download & Close Buttons */}
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    {previewDoc.fileDataUrl ? (
+                      <a
+                        href={previewDoc.fileDataUrl}
+                        download={previewDoc.fileName}
+                        className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition-all"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download Original</span>
+                      </a>
+                    ) : null}
+
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDoc(null)}
+                      className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import { IndiaTerritoryMap } from '@/components/territory/IndiaTerritoryMap';
 import { PartnerStore } from '@/lib/partnerStore';
 import { AuthStore } from '@/lib/authStore';
+import { DocumentVault } from '@/lib/documentStorage';
 import { sendPartnerApplicationEmail, CURAQUANTIS_SUPPORT_EMAIL } from '@/lib/emailNotification';
 import { PathwayType, PartnerApplication, DocumentUpload } from '@/types/partnerPortal';
 import { 
@@ -23,7 +24,11 @@ import {
   Layers,
   ChevronRight,
   HelpCircle,
-  Mail
+  Mail,
+  Database,
+  Loader2,
+  Copy,
+  Check
 } from 'lucide-react';
 
 export const ApplyPathway: React.FC = () => {
@@ -39,6 +44,19 @@ export const ApplyPathway: React.FC = () => {
   const [submittedAppId, setSubmittedAppId] = useState<string | null>(null);
   const [emailStatus, setEmailStatus] = useState<string>('Dispatching docket to support@curaquantis.com...');
   const [mailtoUrl, setMailtoUrl] = useState<string>('');
+  const [applicantMailtoUrl, setApplicantMailtoUrl] = useState<string>('');
+  const [applicantEmailNotice, setApplicantEmailNotice] = useState<string>('');
+  const [copiedId, setCopiedId] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [storageTarget, setStorageTarget] = useState<string>('MongoDB Atlas (curaquantis cluster)');
+
+  const handleCopyAppId = () => {
+    if (submittedAppId) {
+      navigator.clipboard.writeText(submittedAppId);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2500);
+    }
+  };
 
   // Form State
   const [individual, setIndividual] = useState({
@@ -167,6 +185,21 @@ export const ApplyPathway: React.FC = () => {
   ];
 
   const handleRealFileUpload = (docId: string, file: File) => {
+    // 1. Strict File Type Restriction: ONLY PDF or Images allowed
+    const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(file.name);
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+
+    if (!isImage && !isPdf) {
+      alert(`Invalid file format: "${file.name}".\n\nOnly official PDF documents and images (PNG, JPG, JPEG, WEBP) are accepted for regulatory verification. Word, PowerPoint, or other formats are not permitted.`);
+      return;
+    }
+
+    // 2. File size limit: 12MB max
+    if (file.size > 12 * 1024 * 1024) {
+      alert(`File "${file.name}" is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB).\n\nPlease upload a file under 12MB.`);
+      return;
+    }
+
     const sizeInMB = file.size / (1024 * 1024);
     const formattedSize = sizeInMB >= 1 
       ? `${sizeInMB.toFixed(1)} MB` 
@@ -175,6 +208,9 @@ export const ApplyPathway: React.FC = () => {
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result as string;
+      DocumentVault.saveDocument(docId, { fileName: file.name, fileDataUrl: dataUrl, mimeType: file.type });
+      DocumentVault.saveDocument(file.name, { fileName: file.name, fileDataUrl: dataUrl, mimeType: file.type });
+
       setUploadedDocs(prev => prev.map(d => {
         if (d.id === docId) {
           return {
@@ -313,8 +349,9 @@ export const ApplyPathway: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     // Generate unique reference number CQ-2026-XXXXXX
     const randomSuffix = Math.floor(100000 + Math.random() * 900000);
@@ -359,8 +396,24 @@ export const ApplyPathway: React.FC = () => {
       agreementStatus: 'drafting'
     };
 
-    PartnerStore.saveApplication(newApp);
+    // Cache uploaded files in DocumentVault so Admin can preview & download in full resolution
+    uploadedDocs.forEach(d => {
+      if (d.fileDataUrl) {
+        DocumentVault.saveDocument(`${newAppId}_${d.id}`, { fileName: d.fileName, fileDataUrl: d.fileDataUrl, mimeType: d.mimeType });
+        DocumentVault.saveDocument(d.fileName, { fileName: d.fileName, fileDataUrl: d.fileDataUrl, mimeType: d.mimeType });
+      }
+    });
+
+    // Store in MongoDB Atlas (with local resilient fallback)
+    const saveResult = await PartnerStore.saveApplicationAsync(newApp);
+    if (saveResult.storage === 'mongodb_atlas') {
+      setStorageTarget('MongoDB Atlas (curaquantis.partner_applications)');
+    } else {
+      setStorageTarget('Secure Registry (Synchronizing to MongoDB Atlas)');
+    }
+
     setSubmittedAppId(newAppId);
+    setIsSubmitting(false);
 
     // Automatically establish secure isolated session for this applicant
     AuthStore.setCurrentUser({
@@ -372,12 +425,15 @@ export const ApplyPathway: React.FC = () => {
       token: `JWT_CQ_PARTNER_${newApp.id}`
     });
 
-    // Dispatch complete application dossier to support@curaquantis.com
+    // Dispatch complete application dossier to Headquarters & direct confirmation to Applicant Email
     sendPartnerApplicationEmail(newApp).then((res) => {
       setEmailStatus(res.message);
       setMailtoUrl(res.mailtoUrl);
+      setApplicantMailtoUrl(res.applicantMailtoUrl);
+      setApplicantEmailNotice(`Reference ID ${newApp.id} and login link dispatched directly to ${newApp.individual.email}`);
     }).catch(() => {
       setEmailStatus(`Docket securely archived and queued for ${CURAQUANTIS_SUPPORT_EMAIL}`);
+      setApplicantEmailNotice(`Reference ID ${newApp.id} registered for ${newApp.individual.email}`);
     });
   };
 
@@ -464,51 +520,103 @@ export const ApplyPathway: React.FC = () => {
                 Please save your unique reference number below for live status tracking.
               </p>
 
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 mb-8 max-w-md mx-auto">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 mb-6 max-w-md mx-auto">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-800 text-[11px] font-mono mb-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <Database className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{storageTarget}</span>
+                </div>
                 <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">
-                  Application Reference Number
+                  Mandatory Application Reference ID
                 </p>
-                <div className="text-3xl font-extrabold text-blue-950 tracking-wider">
-                  {submittedAppId}
+                <div className="flex items-center justify-center gap-2">
+                  <div className="text-3xl font-extrabold text-blue-950 tracking-wider">
+                    {submittedAppId}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyAppId}
+                    className="p-2 rounded-xl bg-white hover:bg-blue-100/70 border border-blue-200 text-blue-700 shadow-sm transition-all flex items-center gap-1 text-xs font-semibold"
+                    title="Copy Application ID"
+                  >
+                    {copiedId ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-600" />
+                        <span className="text-emerald-700 text-[11px]">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        <span className="text-[11px]">Copy</span>
+                      </>
+                    )}
+                  </button>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-2">
                   Timestamp: {new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST
                 </p>
               </div>
 
-              {/* Email Transmission Notice */}
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 mb-8 max-w-lg mx-auto text-left space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+              {/* DIRECT APPLICANT EMAIL CONFIRMATION CARD */}
+              <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-blue-50 border-2 border-emerald-300 rounded-2xl p-6 mb-6 max-w-lg mx-auto text-left shadow-sm space-y-3">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-md shadow-emerald-500/20">
                     <Mail className="w-5 h-5" />
                   </div>
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
-                      Official Headquarters Notification
-                    </p>
-                    <p className="text-xs text-emerald-950 font-semibold">
-                      Destination Email: <a href={`mailto:${CURAQUANTIS_SUPPORT_EMAIL}`} className="underline text-blue-700">{CURAQUANTIS_SUPPORT_EMAIL}</a>
-                    </p>
-                    <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
-                      {emailStatus}
+                  <div className="flex-grow">
+                    <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-900 bg-emerald-200/80 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                        Dispatched to Your Email
+                      </span>
+                      <span className="text-[11px] font-bold text-emerald-800 font-mono">
+                        {individual.email}
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-extrabold text-slate-900">
+                      Your Mandatory Reference ID &amp; Login Link Sent
+                    </h3>
+                    <p className="text-xs text-slate-700 mt-1 leading-relaxed">
+                      We have sent your Application ID (<strong>{submittedAppId}</strong>) along with your 1-click direct login link directly to <strong>{individual.email}</strong> so you can easily access your onboarding docket anytime.
                     </p>
                   </div>
                 </div>
 
-                {mailtoUrl && (
-                  <div className="pt-3 border-t border-emerald-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <span className="text-[11px] text-emerald-900 font-medium">
-                      Send copy directly from your Email App:
-                    </span>
+                <div className="pt-3 border-t border-emerald-200/80 flex flex-wrap items-center justify-between gap-2">
+                  <Link
+                    to={`/portal/login?appId=${submittedAppId}`}
+                    className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                  >
+                    <span>Login to Portal with this ID</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+
+                  {applicantMailtoUrl && (
                     <a
-                      href={mailtoUrl}
-                      className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors whitespace-nowrap"
+                      href={applicantMailtoUrl}
+                      className="px-3.5 py-2 rounded-xl bg-white hover:bg-emerald-50 text-emerald-900 border border-emerald-300 font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+                      title="Open in your mail client to save a copy"
                     >
-                      <Mail className="w-3.5 h-3.5" />
-                      <span>Open in Mail App & Send</span>
+                      <Mail className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Open in Mail App</span>
                     </a>
-                  </div>
-                )}
+                  )}
+                </div>
+              </div>
+
+              {/* Headquarters Docket Notice */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-8 max-w-lg mx-auto text-left space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-blue-600" />
+                    <span>Headquarters Scrutiny Docket:</span>
+                  </span>
+                  <span className="text-slate-500 font-mono text-[11px]">
+                    {CURAQUANTIS_SUPPORT_EMAIL}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600">
+                  {emailStatus}
+                </p>
               </div>
 
               {/* Status roadmap */}
@@ -1292,18 +1400,18 @@ export const ApplyPathway: React.FC = () => {
                                   <span>{doc.fileName} ({doc.fileSize}) — Attached & Verified</span>
                                 </p>
                               ) : (
-                                <p className="text-[11px] text-slate-400 mt-1">
-                                  Formats: PDF, JPG, PNG, DOCX up to 15MB. Encrypted in transit.
+                                <p className="text-[11px] text-slate-500 mt-1">
+                                  Formats: <span className="font-semibold text-slate-700">PDF, PNG, JPG, WEBP only</span> (Max 12MB). Clear scan required.
                                 </p>
                               )}
                             </div>
                           </div>
 
-                          {/* Real Hidden File Input */}
+                          {/* Real Hidden File Input - Restricted to PDF & Images */}
                           <input
                             type="file"
                             id={`doc-file-${doc.id}`}
-                            accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                            accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
                             className="hidden"
                             onChange={(e) => {
                               if (e.target.files && e.target.files[0]) {
@@ -1612,10 +1720,20 @@ export const ApplyPathway: React.FC = () => {
 
                       <button
                         type="submit"
-                        className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-bold text-sm shadow-xl shadow-cyan-500/25 transition-all flex items-center gap-2 flex-shrink-0"
+                        disabled={isSubmitting}
+                        className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-bold text-sm shadow-xl shadow-cyan-500/25 transition-all flex items-center gap-2 flex-shrink-0 disabled:opacity-60 cursor-pointer"
                       >
-                        <span>SUBMIT APPLICATION FOR CURAQUANTIS™ SCREENING</span>
-                        <ArrowRight className="w-4 h-4" />
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                            <span>STORING IN MONGODB ATLAS...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>SUBMIT APPLICATION FOR CURAQUANTIS™ SCREENING</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>

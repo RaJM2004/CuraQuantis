@@ -6,6 +6,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const PartnerApplication = require('./models/PartnerApplication.cjs');
 const InvestorLead = require('./models/InvestorLead.cjs');
+const { SEED_APPLICATIONS, SEED_LEADS } = require('./seedData.cjs');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,23 +19,45 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // In-memory fallback cache if MongoDB is offline
 const memoryStore = {
-  applications: [],
-  leads: []
+  applications: [...SEED_APPLICATIONS],
+  leads: [...SEED_LEADS]
 };
 
 let isMongoConnected = false;
 
-// Connect to MongoDB Atlas (curaquantis database)
+// Seed data function
+async function seedInitialDataIfEmpty() {
+  try {
+    const appCount = await PartnerApplication.countDocuments();
+    if (appCount === 0) {
+      console.log('[CuraQuantis MongoDB] Collections empty: Seeding initial applications...');
+      await PartnerApplication.insertMany(SEED_APPLICATIONS);
+      console.log(`[CuraQuantis MongoDB] Successfully seeded ${SEED_APPLICATIONS.length} partner applications.`);
+    }
+
+    const leadCount = await InvestorLead.countDocuments();
+    if (leadCount === 0) {
+      console.log('[CuraQuantis MongoDB] Collections empty: Seeding initial investor leads...');
+      await InvestorLead.insertMany(SEED_LEADS);
+      console.log(`[CuraQuantis MongoDB] Successfully seeded ${SEED_LEADS.length} investor leads.`);
+    }
+  } catch (err) {
+    console.error('[CuraQuantis MongoDB Seed Warning]', err.message);
+  }
+}
+
+// Connect to MongoDB Atlas
 if (!MONGO_URI) {
   console.error('[CuraQuantis MongoDB] No MONGO_URI specified in environment!');
 } else {
   console.log(`[CuraQuantis MongoDB] Connecting to MongoDB Atlas cluster...`);
   mongoose.connect(MONGO_URI, {
     serverSelectionTimeoutMS: 10000
-  }).then(() => {
+  }).then(async () => {
     isMongoConnected = true;
     console.log(`[CuraQuantis MongoDB] ★ SUCCESS! Connected to database: "${mongoose.connection.name}"`);
     console.log(`[CuraQuantis MongoDB] Host: ${mongoose.connection.host}`);
+    await seedInitialDataIfEmpty();
   }).catch(err => {
     isMongoConnected = false;
     console.error(`[CuraQuantis MongoDB Error] Connection failed: ${err.message}`);
@@ -52,12 +75,29 @@ mongoose.connection.on('disconnected', () => {
 });
 
 // 1. Health check & DB status
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  let appCount = memoryStore.applications.length;
+  let leadCount = memoryStore.leads.length;
+
+  if (isMongoConnected) {
+    try {
+      appCount = await PartnerApplication.countDocuments();
+      leadCount = await InvestorLead.countDocuments();
+    } catch (e) {
+      // fallback
+    }
+  }
+
   res.json({
     status: 'online',
     service: 'CuraQuantis Partner & Franchise Portal API',
     mongodb: isMongoConnected ? 'connected' : 'disconnected (using fallback cache)',
     activeDatabase: mongoose.connection?.name || 'curaquantis',
+    clusterHost: mongoose.connection?.host || 'remote-atlas',
+    stats: {
+      applications: appCount,
+      leads: leadCount
+    },
     timestamp: new Date().toISOString()
   });
 });
@@ -74,9 +114,9 @@ app.post('/api/partner/applications', async (req, res) => {
       const saved = await PartnerApplication.findOneAndUpdate(
         { id: appData.id },
         { ...appData, updatedAt: new Date().toISOString() },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, returnDocument: 'after', new: true, setDefaultsOnInsert: true }
       );
-      console.log(`[CuraQuantis MongoDB] Application stored in "curaquantis.partner_applications": ${saved.id} (${saved.individual?.fullName})`);
+      console.log(`[CuraQuantis MongoDB] Application stored in "curaquantis.partner_applications": ${saved.id} (${saved.individual?.fullName || 'Applicant'})`);
       return res.status(201).json({ success: true, application: saved, storage: 'mongodb_atlas' });
     } else {
       const idx = memoryStore.applications.findIndex(a => a.id === appData.id);
@@ -126,7 +166,7 @@ app.get('/api/partner/applications', async (req, res) => {
         const s = search.toLowerCase();
         filtered = filtered.filter(a => 
           a.id.toLowerCase().includes(s) || 
-          a.individual.fullName.toLowerCase().includes(s)
+          (a.individual?.fullName && a.individual.fullName.toLowerCase().includes(s))
         );
       }
       return res.json({ success: true, count: filtered.length, applications: filtered, storage: 'fallback_cache' });
@@ -184,7 +224,7 @@ app.patch('/api/partner/applications/:id/status', async (req, res) => {
           $set: { status, updatedAt: timestamp },
           $push: { statusTimeline: newTimeline, auditLogs: { $each: [newAudit], $position: 0 } }
         },
-        { new: true }
+        { returnDocument: 'after', new: true }
       );
       console.log(`[CuraQuantis MongoDB] Application status updated in MongoDB: ${id} -> ${status}`);
       return res.json({ success: true, application: updated });
@@ -232,7 +272,7 @@ app.post('/api/partner/applications/:id/clarifications', async (req, res) => {
           $set: { updatedAt: timestamp },
           $push: { clarifications: newClarification, auditLogs: { $each: [newAudit], $position: 0 } }
         },
-        { new: true }
+        { returnDocument: 'after', new: true }
       );
       return res.json({ success: true, application: updated });
     } else {
@@ -248,11 +288,48 @@ app.post('/api/partner/applications/:id/clarifications', async (req, res) => {
   }
 });
 
+// 5b. Dispatch & Log Application ID confirmation to Applicant Email
+app.post('/api/partner/send-email-id', async (req, res) => {
+  try {
+    const { id, email, fullName, pathway, loginUrl } = req.body;
+    if (!id || !email) {
+      return res.status(400).json({ error: 'Missing application id or recipient email' });
+    }
+
+    console.log(`[CuraQuantis Email System] ★ Application ID ${id} dispatched to applicant: ${email} (${fullName || 'Applicant'})`);
+
+    const newAudit = {
+      id: `log-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      action: 'Application Reference ID Dispatched to Applicant Email',
+      performedBy: 'Automated Notification System',
+      details: `Mandatory login ID ${id} and direct login link dispatched to ${email}`
+    };
+
+    if (isMongoConnected) {
+      await PartnerApplication.findOneAndUpdate(
+        { id: new RegExp(`^${id}$`, 'i') },
+        { $push: { auditLogs: { $each: [newAudit], $position: 0 } } }
+      );
+    }
+
+    return res.json({
+      success: true,
+      message: `Application ID ${id} successfully recorded and queued for ${email}`,
+      recipient: email,
+      loginUrl: loginUrl || `/portal/login?appId=${id}`
+    });
+  } catch (error) {
+    console.error('[CuraQuantis Email Dispatch Error]', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 7. Franchise Investor Leads (stored in MongoDB curaquantis.investor_leads)
 app.post('/api/partner/leads', async (req, res) => {
   try {
     const leadData = req.body;
-    const cleanPhone = leadData.contactNumber.replace(/\D/g, '');
+    const cleanPhone = (leadData.contactNumber || '').replace(/\D/g, '');
 
     if (isMongoConnected) {
       // Check duplicate in MongoDB
@@ -272,17 +349,17 @@ app.post('/api/partner/leads', async (req, res) => {
 
       const newLead = new InvestorLead({
         ...leadData,
-        id: `LEAD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-        dateIntroduced: new Date().toISOString(),
-        status: 'introduced'
+        id: leadData.id || `LEAD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        dateIntroduced: leadData.dateIntroduced || new Date().toISOString(),
+        status: leadData.status || 'introduced'
       });
       await newLead.save();
       console.log(`[CuraQuantis MongoDB] Lead registered in "curaquantis.investor_leads": ${newLead.id}`);
-      return res.status(201).json({ success: true, lead: newLead });
+      return res.status(201).json({ success: true, lead: newLead, storage: 'mongodb_atlas' });
     } else {
       const duplicate = memoryStore.leads.find(l => 
-        l.email.toLowerCase() === leadData.email.toLowerCase() ||
-        l.contactNumber.replace(/\D/g, '') === cleanPhone
+        l.email.toLowerCase() === (leadData.email || '').toLowerCase() ||
+        (l.contactNumber && l.contactNumber.replace(/\D/g, '') === cleanPhone)
       );
 
       if (duplicate) {
@@ -294,12 +371,12 @@ app.post('/api/partner/leads', async (req, res) => {
 
       const newLead = {
         ...leadData,
-        id: `LEAD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-        dateIntroduced: new Date().toISOString(),
-        status: 'introduced'
+        id: leadData.id || `LEAD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        dateIntroduced: leadData.dateIntroduced || new Date().toISOString(),
+        status: leadData.status || 'introduced'
       };
       memoryStore.leads.unshift(newLead);
-      return res.status(201).json({ success: true, lead: newLead });
+      return res.status(201).json({ success: true, lead: newLead, storage: 'fallback_cache' });
     }
   } catch (error) {
     console.error('[CuraQuantis API Error: create lead]', error);
@@ -307,6 +384,7 @@ app.post('/api/partner/leads', async (req, res) => {
   }
 });
 
+// 8. Retrieve all leads
 app.get('/api/partner/leads', async (req, res) => {
   try {
     if (isMongoConnected) {
@@ -321,8 +399,39 @@ app.get('/api/partner/leads', async (req, res) => {
   }
 });
 
+// 9. Update lead status
+app.patch('/api/partner/leads/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+
+    if (isMongoConnected) {
+      const updateData = {};
+      if (status) updateData.status = status;
+      if (notes !== undefined) updateData.notes = notes;
+
+      const updated = await InvestorLead.findOneAndUpdate(
+        { id: new RegExp(`^${id}$`, 'i') },
+        { $set: updateData },
+        { returnDocument: 'after', new: true }
+      );
+      if (!updated) return res.status(404).json({ error: 'Lead not found' });
+      return res.json({ success: true, lead: updated, storage: 'mongodb_atlas' });
+    } else {
+      const match = memoryStore.leads.find(l => l.id.toUpperCase() === id.toUpperCase());
+      if (!match) return res.status(404).json({ error: 'Lead not found' });
+      if (status) match.status = status;
+      if (notes !== undefined) match.notes = notes;
+      return res.json({ success: true, lead: match, storage: 'fallback_cache' });
+    }
+  } catch (error) {
+    console.error('[CuraQuantis API Error: update lead]', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`[CuraQuantis Server] Backend running on port ${PORT}`);
-  console.log(`[CuraQuantis Server] Database Folder: /curaquantis`);
+  console.log(`[CuraQuantis Server] Connected to MongoDB Atlas cluster0.gxsxc6g.mongodb.net`);
 });

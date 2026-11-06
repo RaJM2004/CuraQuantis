@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { AuthStore, DEFAULT_ADMIN_CREDENTIALS } from '@/lib/authStore';
-import { PartnerStore } from '@/lib/partnerStore';
+import { AuthStore } from '@/lib/authStore';
 import { 
   ShieldCheck, 
   User, 
@@ -15,7 +14,6 @@ import {
   ArrowRight, 
   AlertCircle, 
   CheckCircle2, 
-  Sparkles, 
   Building2,
   Briefcase,
   HelpCircle
@@ -41,9 +39,6 @@ export const PortalLogin: React.FC = () => {
   const [adminError, setAdminError] = useState('');
   const [isAdminSubmitting, setIsAdminSubmitting] = useState(false);
 
-  // Existing applications for demo testing
-  const [sampleApps, setSampleApps] = useState<any[]>([]);
-
   useEffect(() => {
     // If already logged in, redirect
     const user = AuthStore.getCurrentUser();
@@ -54,9 +49,6 @@ export const PortalLogin: React.FC = () => {
         navigate(`/portal/partner-dashboard?appId=${user.associatedAppId}`);
       }
     }
-
-    const apps = PartnerStore.getApplications();
-    setSampleApps(apps.slice(0, 5));
   }, [navigate]);
 
   const handleApplicantLogin = (e: React.FormEvent) => {
@@ -73,8 +65,7 @@ export const PortalLogin: React.FC = () => {
     }
 
     setIsApplicantSubmitting(true);
-    setTimeout(() => {
-      const res = AuthStore.loginAsApplicant(appId, mobileOrEmail);
+    AuthStore.loginAsApplicantAsync(appId, mobileOrEmail).then((res) => {
       setIsApplicantSubmitting(false);
 
       if (res.success && res.user?.associatedAppId) {
@@ -82,7 +73,10 @@ export const PortalLogin: React.FC = () => {
       } else {
         setApplicantError(res.message);
       }
-    }, 400);
+    }).catch(err => {
+      setIsApplicantSubmitting(false);
+      setApplicantError(`Login error: ${err.message}`);
+    });
   };
 
   const handleAdminLogin = (e: React.FormEvent) => {
@@ -111,25 +105,8 @@ export const PortalLogin: React.FC = () => {
     }, 400);
   };
 
-  const handleQuickApplicantDemo = (sample: any) => {
-    setAppId(sample.id);
-    setMobileOrEmail(sample.individual.mobile || sample.individual.email);
-    setApplicantError('');
-  };
-
-  const handleQuickAdminDemo = (role: 'chairman' | 'admin') => {
-    if (role === 'chairman') {
-      setAdminEmail(DEFAULT_ADMIN_CREDENTIALS.dharaniEmail);
-      setAdminPassword(DEFAULT_ADMIN_CREDENTIALS.dharaniPassword);
-    } else {
-      setAdminEmail(DEFAULT_ADMIN_CREDENTIALS.email);
-      setAdminPassword(DEFAULT_ADMIN_CREDENTIALS.password);
-    }
-    setAdminError('');
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
 
       <main className="flex-grow pt-24 pb-20 flex items-center justify-center">
@@ -258,33 +235,6 @@ export const PortalLogin: React.FC = () => {
                   </button>
                 </form>
 
-                {/* Quick Demo Pre-fill for Reviewers */}
-                {sampleApps.length > 0 && (
-                  <div className="pt-5 border-t border-slate-100">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                      <span>One-Click Test Accounts (Demo Evaluation):</span>
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {sampleApps.map((sample) => (
-                        <button
-                          key={sample.id}
-                          type="button"
-                          onClick={() => handleQuickApplicantDemo(sample)}
-                          className="text-left p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 transition-all text-xs group"
-                        >
-                          <p className="font-bold text-slate-800 group-hover:text-blue-900 truncate">
-                            {sample.individual.fullName}
-                          </p>
-                          <p className="text-[11px] text-slate-500 font-mono truncate">
-                            {sample.id} • {sample.pathway}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 <div className="pt-2 text-center">
                   <p className="text-xs text-slate-500">
                     Haven't applied yet?{' '}
@@ -370,31 +320,6 @@ export const PortalLogin: React.FC = () => {
                     )}
                   </button>
                 </form>
-
-                {/* Pre-fill Buttons */}
-                <div className="pt-4 border-t border-slate-800">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    Quick-Fill Executive Credentials:
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => handleQuickAdminDemo('chairman')}
-                      className="p-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 hover:border-cyan-400/50 text-slate-200 text-left transition-all"
-                    >
-                      <p className="font-bold text-cyan-300">Dr. Dharani</p>
-                      <p className="text-[10px] text-slate-400 truncate">Executive Chairman</p>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuickAdminDemo('admin')}
-                      className="p-2.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 hover:border-cyan-400/50 text-slate-200 text-left transition-all"
-                    >
-                      <p className="font-bold text-cyan-300">Scrutiny Board</p>
-                      <p className="text-[10px] text-slate-400 truncate">admin@curaquantis.com</p>
-                    </button>
-                  </div>
-                </div>
               </div>
             )}
           </div>

@@ -32,6 +32,7 @@ export interface DocumentUpload {
   status: 'pending' | 'verified' | 'rejected' | 'clarification_needed';
   isMandatory: boolean;
   notes?: string;
+  rejectionReason?: string;
   fileDataUrl?: string;
   mimeType?: string;
 }

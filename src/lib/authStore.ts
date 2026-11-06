@@ -117,6 +117,23 @@ export const AuthStore = {
     return { success: true, message: 'Identity verified. Accessing your secure docket.', user: partnerUser };
   },
 
+  loginAsApplicantAsync: async (appId: string, mobileOrEmail: string): Promise<{ success: boolean; message: string; user?: AuthUser }> => {
+    const cleanId = appId.trim().toUpperCase();
+    let app = PartnerStore.getApplicationById(cleanId);
+    if (!app) {
+      app = (await PartnerStore.fetchApplicationByIdFromMongoDB(cleanId)) || undefined;
+    }
+
+    if (!app) {
+      return {
+        success: false,
+        message: `No application docket found in MongoDB Atlas for Reference ID "${appId}". Please verify your reference number.`
+      };
+    }
+
+    return AuthStore.loginAsApplicant(cleanId, mobileOrEmail);
+  },
+
   logout: (): void => {
     AuthStore.setCurrentUser(null);
   },

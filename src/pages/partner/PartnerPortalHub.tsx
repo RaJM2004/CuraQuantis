@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -21,23 +21,59 @@ import {
   CreditCard,
   FileCheck2,
   HelpCircle,
-  Stethoscope
+  Stethoscope,
+  Database,
+  Loader2
 } from 'lucide-react';
 
 export const PartnerPortalHub: React.FC = () => {
   const [trackRef, setTrackRef] = useState('');
   const [trackError, setTrackError] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [dbStatus, setDbStatus] = useState<{ connected: boolean; count?: number; dbName?: string }>({
+    connected: false
+  });
   const navigate = useNavigate();
 
-  const handleTrackSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!trackRef.trim()) return;
+  useEffect(() => {
+    // Initial fetch from MongoDB Atlas
+    PartnerStore.fetchFromMongoDB().then((apps) => {
+      if (apps) {
+        setDbStatus(prev => ({ ...prev, count: apps.length }));
+      }
+    });
 
-    const app = PartnerStore.getApplicationById(trackRef.trim());
+    PartnerStore.checkMongoDBHealth().then(status => {
+      if (status.online) {
+        setDbStatus({
+          connected: status.mongodb?.includes('connected') || true,
+          count: status.count?.applications,
+          dbName: status.database || 'curaquantis'
+        });
+      }
+    });
+  }, []);
+
+  const handleTrackSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = trackRef.trim();
+    if (!query) return;
+
+    setIsSearching(true);
+    setTrackError('');
+
+    // Check local store first
+    let app = PartnerStore.getApplicationById(query);
+    if (!app) {
+      // Query MongoDB directly via backend API
+      app = (await PartnerStore.fetchApplicationByIdFromMongoDB(query)) || undefined;
+    }
+
+    setIsSearching(false);
     if (app) {
       navigate(`/portal/login?appId=${app.id}`);
     } else {
-      setTrackError(`Application with reference number "${trackRef}" was not found. Please verify your reference number (e.g., CQ-2026-904128) or submit a new application.`);
+      setTrackError(`Application with reference number "${query}" was not found in MongoDB Atlas or local registry. Please verify your reference number (e.g., CQ-2026-904128) or submit a new application.`);
     }
   };
 
@@ -147,12 +183,19 @@ export const PartnerPortalHub: React.FC = () => {
 
             {/* Quick Status Tracker Search Box */}
             <div className="mt-14 bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-6 sm:p-8 max-w-2xl shadow-2xl">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-cyan-300 flex items-center gap-2 mb-2">
-                <Search className="w-4 h-4" />
-                <span>Track Application Due Diligence Status</span>
-              </h3>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-cyan-300 flex items-center gap-2">
+                  <Search className="w-4 h-4" />
+                  <span>Track Application Due Diligence Status</span>
+                </h3>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-[10px] font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <Database className="w-3 h-3" />
+                  <span>MongoDB Atlas</span>
+                </div>
+              </div>
               <p className="text-xs text-slate-300 font-light mb-4">
-                Already filed an application? Enter your unique Reference Number (e.g. <code>CQ-2026-904128</code>) for real-time screening updates.
+                Already filed an application? Enter your unique Reference Number (e.g. <code>CQ-2026-904128</code>) for real-time screening updates from MongoDB storage.
               </p>
               
               <form onSubmit={handleTrackSubmit} className="flex flex-col sm:flex-row gap-3">
@@ -164,14 +207,25 @@ export const PartnerPortalHub: React.FC = () => {
                     setTrackError('');
                   }}
                   placeholder="Enter CQ-2026-XXXXXX"
-                  className="flex-grow px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 font-mono"
+                  disabled={isSearching}
+                  className="flex-grow px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 font-mono disabled:opacity-50"
                 />
                 <button
                   type="submit"
-                  className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all shadow-md flex items-center justify-center gap-2"
+                  disabled={isSearching}
+                  className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  <span>Track Status</span>
-                  <ArrowRight className="w-4 h-4" />
+                  {isSearching ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Querying DB...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Track Status</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </form>
 

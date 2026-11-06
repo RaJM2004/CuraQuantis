@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import { PartnerStore } from '@/lib/partnerStore';
 import { AuthStore, AuthUser } from '@/lib/authStore';
 import { PartnerApplication, InvestorLead } from '@/types/partnerPortal';
+import { DocumentVault } from '@/lib/documentStorage';
 import { 
   CheckCircle2, 
   Clock, 
@@ -25,7 +26,18 @@ import {
   Sparkles,
   LogOut,
   ArrowLeft,
-  Lock
+  Lock,
+  Eye,
+  UploadCloud,
+  AlertTriangle,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Maximize2,
+  ExternalLink,
+  Check,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 
 export const PartnerDashboard: React.FC = () => {
@@ -58,6 +70,162 @@ export const PartnerDashboard: React.FC = () => {
   // Payment simulated state
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
+  // Document Inspection & Re-upload State
+  const [previewDoc, setPreviewDoc] = useState<{
+    id: string;
+    name: string;
+    fileName: string;
+    fileSize?: string;
+    uploadedAt?: string;
+    fileDataUrl?: string;
+    mimeType?: string;
+    status: string;
+    rejectionReason?: string;
+  } | null>(null);
+  const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
+  const [imgZoom, setImgZoom] = useState<number>(1);
+  const [imgRotation, setImgRotation] = useState<number>(0);
+  const [reuploadingDocId, setReuploadingDocId] = useState<string | null>(null);
+  const [docFeedback, setDocFeedback] = useState<string>('');
+
+  const handlePreviewDocument = async (doc: any) => {
+    setLoadingDocId(doc.id);
+    setImgZoom(1);
+    setImgRotation(0);
+
+    let dataUrl = doc.fileDataUrl;
+    let mime = doc.mimeType;
+
+    // Fetch from MongoDB if not in memory
+    if (!dataUrl && selectedApp) {
+      try {
+        const fullApp = await PartnerStore.fetchApplicationByIdFromMongoDB(selectedApp.id);
+        if (fullApp) {
+          const remoteDoc = (fullApp.documents || []).find(d => d.id === doc.id);
+          if (remoteDoc?.fileDataUrl) {
+            dataUrl = remoteDoc.fileDataUrl;
+            mime = remoteDoc.mimeType || mime;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not read from MongoDB endpoint', e);
+      }
+    }
+
+    // Check DocumentVault
+    if (!dataUrl && selectedApp) {
+      try {
+        const cached = await DocumentVault.findDocument([
+          `${selectedApp.id}_${doc.id}`,
+          doc.id,
+          doc.fileName,
+          doc.name
+        ]);
+        if (cached?.fileDataUrl) {
+          dataUrl = cached.fileDataUrl;
+          mime = cached.mimeType || mime;
+        }
+      } catch (e) {
+        console.warn('Could not read from vault', e);
+      }
+    }
+
+    setLoadingDocId(null);
+    setPreviewDoc({
+      id: doc.id,
+      name: doc.name,
+      fileName: doc.fileName || `${doc.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+      fileSize: doc.fileSize || 'Attached File',
+      uploadedAt: doc.uploadedAt || new Date().toISOString().split('T')[0],
+      fileDataUrl: dataUrl,
+      mimeType: mime,
+      status: doc.status || 'pending',
+      rejectionReason: doc.rejectionReason
+    });
+  };
+
+  const handleReuploadFile = (docId: string, file: File) => {
+    if (!selectedApp) return;
+
+    // 1. Strict File Type Restriction: ONLY PDF or Images allowed
+    const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(file.name);
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+
+    if (!isImage && !isPdf) {
+      alert(`Invalid file format: "${file.name}".\n\nOnly official PDF documents and images (PNG, JPG, JPEG, WEBP) are accepted for regulatory verification. Word, PowerPoint, or other formats are not permitted.`);
+      return;
+    }
+
+    // 2. File size limit: 12MB max
+    if (file.size > 12 * 1024 * 1024) {
+      alert(`File "${file.name}" is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB).\n\nPlease upload a file under 12MB.`);
+      return;
+    }
+
+    setReuploadingDocId(docId);
+    const sizeInMB = file.size / (1024 * 1024);
+    const formattedSize = sizeInMB >= 1 
+      ? `${sizeInMB.toFixed(1)} MB` 
+      : `${Math.max(1, Math.round(file.size / 1024))} KB`;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+
+      // Save to DocumentVault
+      await DocumentVault.saveDocument(`${selectedApp.id}_${docId}`, { fileName: file.name, fileDataUrl: dataUrl, mimeType: file.type });
+      await DocumentVault.saveDocument(docId, { fileName: file.name, fileDataUrl: dataUrl, mimeType: file.type });
+      await DocumentVault.saveDocument(file.name, { fileName: file.name, fileDataUrl: dataUrl, mimeType: file.type });
+
+      // Update document list
+      const targetDoc = selectedApp.documents.find(d => d.id === docId);
+      const docName = targetDoc?.name || 'Document';
+
+      const updatedDocs = selectedApp.documents.map(d => {
+        if (d.id === docId) {
+          return {
+            ...d,
+            fileName: file.name,
+            fileSize: formattedSize,
+            uploadedAt: new Date().toISOString().split('T')[0],
+            status: 'pending' as const,
+            fileDataUrl: dataUrl,
+            mimeType: file.type,
+            rejectionReason: undefined // Clear previous rejection
+          };
+        }
+        return d;
+      });
+
+      const newAudit = {
+        id: `log-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        action: 'Document Re-uploaded',
+        performedBy: selectedApp.individual.fullName || 'Applicant',
+        details: `Replaced document for "${docName}" with new file: ${file.name} (${formattedSize}). Status reset to pending for re-scrutiny.`
+      };
+
+      const updatedApp: PartnerApplication = {
+        ...selectedApp,
+        documents: updatedDocs,
+        auditLogs: [newAudit, ...(selectedApp.auditLogs || [])],
+        updatedAt: new Date().toISOString()
+      };
+
+      setSelectedApp(updatedApp);
+      setApplications(prev => prev.map(a => a.id === updatedApp.id ? updatedApp : a));
+
+      // Asynchronously persist to MongoDB Atlas & LocalStore
+      await PartnerStore.saveApplicationAsync(updatedApp);
+
+      setReuploadingDocId(null);
+      setDocFeedback(`Document "${file.name}" uploaded successfully! Sent for compliance re-scrutiny.`);
+      setTimeout(() => setDocFeedback(''), 5000);
+    };
+
+    reader.readAsDataURL(file);
+  };
+
   useEffect(() => {
     const user = AuthStore.getCurrentUser();
     setCurrentUser(user);
@@ -69,6 +237,14 @@ export const PartnerDashboard: React.FC = () => {
     }
 
     loadData(user);
+
+    // Asynchronously synchronize with MongoDB Atlas
+    PartnerStore.fetchFromMongoDB().then(() => loadData(user));
+    PartnerStore.fetchLeadsFromMongoDB().then((remoteLeads) => {
+      if (remoteLeads && remoteLeads.length > 0) {
+        setLeads(remoteLeads);
+      }
+    });
   }, [urlAppId, navigate]);
 
   const loadData = (userOverride?: AuthUser | null) => {
@@ -405,61 +581,165 @@ export const PartnerDashboard: React.FC = () => {
           {/* TAB 2: DOCUMENTS */}
           {activeTab === 'documents' && (
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6 animate-fade-in-up">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">Submitted Credential Documents</h3>
-                  <p className="text-xs text-slate-500">All uploaded credentials under scrutiny</p>
+                  <p className="text-xs text-slate-500">Official onboarding dossier under regulatory scrutiny (PDF and Images only)</p>
                 </div>
-                <span className="text-xs font-bold bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200">
-                  {selectedApp.documents.filter(d => d.status === 'verified').length} / {selectedApp.documents.length} Verified
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200">
+                    {selectedApp.documents.filter(d => d.status === 'verified').length} / {selectedApp.documents.length} Verified
+                  </span>
+                  {selectedApp.documents.some(d => d.status === 'rejected') && (
+                    <span className="text-xs font-bold bg-rose-50 text-rose-700 px-3 py-1 rounded-full border border-rose-200 flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Action Required
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {selectedApp.documents.map(doc => (
-                  <div key={doc.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <FileText className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-xs text-slate-900">{doc.name}</h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          {doc.fileName || 'Not uploaded yet'} {doc.fileSize && `(${doc.fileSize})`}
-                        </p>
-                        <span className={`inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                          doc.status === 'verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                        }`}>
-                          {doc.status}
-                        </span>
-                      </div>
-                    </div>
+              {docFeedback && (
+                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-semibold flex items-center gap-2 animate-fade-in">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>{docFeedback}</span>
+                </div>
+              )}
 
-                    {doc.fileName && (
-                      <div className="flex items-center gap-1">
-                        {doc.fileDataUrl ? (
-                          <a
-                            href={doc.fileDataUrl}
-                            download={doc.fileName}
-                            className="p-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
-                            title="Download Verified File"
-                          >
-                            <Download className="w-4 h-4" />
-                          </a>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => alert(`Official encrypted archive for ${doc.fileName}`)}
-                            className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
-                            title="Archived File"
-                          >
-                            <Download className="w-4 h-4" />
-                          </button>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {selectedApp.documents.map(doc => {
+                  const isRejected = doc.status === 'rejected';
+                  const isVerified = doc.status === 'verified';
+                  const isPending = doc.status === 'pending';
+                  const isReuploading = reuploadingDocId === doc.id;
+
+                  return (
+                    <div 
+                      key={doc.id} 
+                      className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${
+                        isRejected 
+                          ? 'border-rose-300 bg-rose-50/40 ring-1 ring-rose-200' 
+                          : isVerified
+                          ? 'border-emerald-200 bg-emerald-50/20'
+                          : 'border-slate-200 bg-slate-50'
+                      }`}
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                              isRejected 
+                                ? 'bg-rose-100 text-rose-700' 
+                                : isVerified 
+                                ? 'bg-emerald-100 text-emerald-700' 
+                                : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              <FileText className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-xs text-slate-900">{doc.name}</h4>
+                              <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                                {doc.fileName || 'Not uploaded yet'} {doc.fileSize && `• ${doc.fileSize}`}
+                              </p>
+                              {doc.uploadedAt && (
+                                <p className="text-[10px] text-slate-400 mt-0.5">
+                                  Uploaded: {doc.uploadedAt}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0 ${
+                            isVerified 
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                              : isRejected
+                              ? 'bg-rose-100 text-rose-800 border border-rose-300 font-extrabold'
+                              : 'bg-amber-100 text-amber-800 border border-amber-200'
+                          }`}>
+                            {doc.status}
+                          </span>
+                        </div>
+
+                        {/* Rejection Feedback Banner */}
+                        {isRejected && (
+                          <div className="p-3 rounded-xl bg-rose-100/70 border border-rose-200 text-xs text-rose-900 space-y-1">
+                            <div className="flex items-center gap-1.5 font-bold text-rose-800 text-[11px] uppercase tracking-wider">
+                              <AlertTriangle className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
+                              <span>Rejection Feedback from Compliance Directorate:</span>
+                            </div>
+                            <p className="text-[11px] text-rose-800 leading-relaxed font-medium pl-5">
+                              {doc.rejectionReason || 'Document could not be verified. Please re-upload a clear and valid copy.'}
+                            </p>
+                          </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {/* Action Bar */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-4 mt-3 border-t border-slate-200/60">
+                        {/* View & Download buttons */}
+                        <div className="flex items-center gap-1.5">
+                          {doc.fileName && (
+                            <button
+                              type="button"
+                              onClick={() => handlePreviewDocument(doc)}
+                              disabled={loadingDocId === doc.id}
+                              className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
+                              title="Inspect uploaded document in high-res viewer"
+                            >
+                              {loadingDocId === doc.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                              ) : (
+                                <Eye className="w-3.5 h-3.5 text-blue-600" />
+                              )}
+                              <span>View Document</span>
+                            </button>
+                          )}
+
+                          {doc.fileDataUrl && (
+                            <a
+                              href={doc.fileDataUrl}
+                              download={doc.fileName}
+                              className="p-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-sm transition-colors"
+                              title="Download original file"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </div>
+
+                        {/* Re-upload File Button */}
+                        <div>
+                          <label className={`cursor-pointer px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-sm ${
+                            isRejected
+                              ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-500/20'
+                              : isPending
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'
+                              : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                          }`}>
+                            {isReuploading ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <UploadCloud className="w-3.5 h-3.5" />
+                            )}
+                            <span>{isRejected ? 'Re-upload Corrected File' : doc.fileName ? 'Replace File' : 'Upload File'}</span>
+                            <input
+                              type="file"
+                              accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
+                              disabled={isReuploading}
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleReuploadFile(doc.id, file);
+                                }
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -820,6 +1100,218 @@ export const PartnerDashboard: React.FC = () => {
           )}
         </div>
       </main>
+
+      {/* DOCUMENT HIGH-RESOLUTION INSPECTION MODAL */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden p-5 sm:p-6 space-y-4">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <FileText className="w-4 h-4" />
+                  </span>
+                  <h3 className="font-extrabold text-base sm:text-lg text-slate-900">
+                    {previewDoc.name}
+                  </h3>
+                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                    previewDoc.status === 'verified'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      : previewDoc.status === 'rejected'
+                      ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                      : 'bg-amber-100 text-amber-800 border border-amber-200'
+                  }`}>
+                    {previewDoc.status}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-mono mt-1">
+                  Filename: <span className="font-semibold text-slate-800">{previewDoc.fileName}</span> • {previewDoc.fileSize || 'Attached'} • Date: {previewDoc.uploadedAt}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPreviewDoc(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors flex-shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Rejection notice inside modal if rejected */}
+            {previewDoc.status === 'rejected' && (
+              <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                <span>
+                  <strong>Scrutiny Notice:</strong> {previewDoc.rejectionReason || 'Document was rejected during compliance audit. Please use the re-upload button on your dashboard to upload a clearer document.'}
+                </span>
+              </div>
+            )}
+
+            {/* Document Body Preview Area */}
+            <div className="flex-grow overflow-auto p-4 bg-slate-100/70 rounded-2xl flex flex-col items-center justify-center min-h-[380px] max-h-[60vh] border border-slate-200/80 relative">
+              {previewDoc.fileDataUrl ? (
+                previewDoc.fileDataUrl.startsWith('data:image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(previewDoc.fileName) ? (
+                  <div className="flex flex-col items-center w-full h-full">
+                    {/* Image Inspection Toolbar */}
+                    <div className="w-full flex flex-wrap items-center justify-between gap-2 pb-2 mb-2 border-b border-slate-200 text-xs">
+                      <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                        <button
+                          type="button"
+                          onClick={() => setImgZoom(z => Math.max(0.5, z - 0.25))}
+                          className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-700 transition-colors"
+                          title="Zoom Out (-)"
+                        >
+                          <ZoomOut className="w-4 h-4" />
+                        </button>
+                        <span className="font-mono text-[11px] font-bold px-2 text-slate-700 min-w-[42px] text-center">
+                          {Math.round(imgZoom * 100)}%
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setImgZoom(z => Math.min(3, z + 0.25))}
+                          className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-700 transition-colors"
+                          title="Zoom In (+)"
+                        >
+                          <ZoomIn className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setImgZoom(1); setImgRotation(0); }}
+                          className="px-2 py-1 text-[10px] font-bold text-slate-600 hover:text-slate-900 border-l border-slate-200"
+                          title="Reset View"
+                        >
+                          Reset
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setImgRotation(r => (r + 90) % 360)}
+                          className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-700 border-l border-slate-200 transition-colors flex items-center gap-1"
+                          title="Rotate 90 degrees"
+                        >
+                          <RotateCw className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-mono">{imgRotation}°</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={previewDoc.fileDataUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+                          title="Open full-resolution image in new browser tab"
+                        >
+                          <Maximize2 className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Fullscreen in New Tab</span>
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Viewport */}
+                    <div className="w-full flex-grow overflow-auto flex items-center justify-center p-3 bg-white/60 rounded-2xl min-h-[300px]">
+                      <img
+                        src={previewDoc.fileDataUrl}
+                        alt={previewDoc.fileName}
+                        style={{
+                          transform: `scale(${imgZoom}) rotate(${imgRotation}deg)`,
+                          transition: 'transform 0.15s ease-out'
+                        }}
+                        className="max-h-[48vh] max-w-full object-contain rounded-xl shadow-lg border border-slate-200 bg-white"
+                      />
+                    </div>
+                  </div>
+                ) : previewDoc.fileDataUrl.startsWith('data:application/pdf') || /\.pdf$/i.test(previewDoc.fileName) ? (
+                  <div className="flex flex-col w-full h-full">
+                    {/* PDF Toolbar */}
+                    <div className="w-full flex items-center justify-between pb-2 mb-2 border-b border-slate-200 text-xs">
+                      <div className="flex items-center gap-2 text-slate-700">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span className="font-bold">{previewDoc.fileName}</span>
+                        <span className="text-[11px] text-slate-500 font-mono">({previewDoc.fileSize || 'PDF'})</span>
+                      </div>
+                      <a
+                        href={previewDoc.fileDataUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+                        title="Open PDF in full browser window"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Open PDF in Full Window</span>
+                      </a>
+                    </div>
+                    <iframe
+                      src={previewDoc.fileDataUrl}
+                      title={previewDoc.fileName}
+                      className="w-full h-[50vh] rounded-2xl border border-slate-300 shadow-sm bg-white"
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center p-8 bg-white rounded-2xl border border-slate-200 max-w-md shadow-sm space-y-4">
+                    <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-200">
+                      <FileText className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">{previewDoc.fileName}</h4>
+                      <p className="text-xs text-slate-500 mt-1">Binary file attached and verified in secure storage</p>
+                    </div>
+                    <a
+                      href={previewDoc.fileDataUrl}
+                      download={previewDoc.fileName}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow transition-all"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download Original File</span>
+                    </a>
+                  </div>
+                )
+              ) : (
+                <div className="flex flex-col items-center justify-center text-center p-8 bg-white rounded-3xl border border-slate-200 max-w-lg shadow-sm space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shadow-inner">
+                    <FileText className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                      <ShieldCheck className="w-3 h-3 text-blue-600" />
+                      <span>Document Record</span>
+                    </div>
+                    <h4 className="font-extrabold text-slate-900 text-base">
+                      {previewDoc.fileName}
+                    </h4>
+                    <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
+                      Uploaded during initial application onboarding. Use the "Re-upload" button on your dashboard to provide an updated copy if requested.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+              {previewDoc.fileDataUrl ? (
+                <a
+                  href={previewDoc.fileDataUrl}
+                  download={previewDoc.fileName}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition-all"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download File</span>
+                </a>
+              ) : <div />}
+
+              <button
+                type="button"
+                onClick={() => setPreviewDoc(null)}
+                className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

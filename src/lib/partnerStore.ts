@@ -3,8 +3,56 @@ import { PartnerApplication, InvestorLead, AuditLogEntry } from '@/types/partner
 const STORAGE_KEY_APPLICATIONS = 'curaquantis_partner_applications_v1';
 const STORAGE_KEY_LEADS = 'curaquantis_investor_leads_v1';
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000';
+// Base API URL configuration
+const getApiBaseUrl = (): string => {
+  const envUrl = (import.meta as any).env?.VITE_API_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
+    return envUrl.trim().replace(/\/$/, '');
+  }
+  // When empty or on localhost, use relative path to route through Vite proxy
+  return '';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const API_URL = `${API_BASE_URL}/api/partner`;
+
+// Strip large base64 file data URLs before caching in localStorage (5MB browser quota protection)
+function sanitizeApplicationForStorage(app: PartnerApplication): PartnerApplication {
+  return {
+    ...app,
+    documents: (app.documents || []).map(doc => {
+      const sanitized = { ...doc };
+      if ((sanitized as any).fileDataUrl) {
+        delete (sanitized as any).fileDataUrl;
+      }
+      return sanitized;
+    })
+  };
+}
+
+// Resilient localStorage write that catches QuotaExceededError and prevents app crash
+function safeSetStorage(key: string, data: any): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (err: any) {
+    if (err?.name === 'QuotaExceededError' || err?.code === 22 || err?.number === -2147024882) {
+      console.warn('[LocalStorage] Storage quota reached. Trimming cache to prevent crashes.');
+      try {
+        if (Array.isArray(data)) {
+          // Keep only the 2 most recent dockets
+          const trimmed = data.slice(0, 2);
+          localStorage.setItem(key, JSON.stringify(trimmed));
+        } else {
+          localStorage.removeItem(key);
+        }
+      } catch (innerErr) {
+        console.warn('[LocalStorage] Could not write trimmed cache. Continuing safely.', innerErr);
+      }
+    } else {
+      console.warn('[LocalStorage Save]', err);
+    }
+  }
+}
 
 const SEED_APPLICATIONS: PartnerApplication[] = [
   {
@@ -335,7 +383,7 @@ export const PartnerStore = {
       console.error('Error reading applications from localStorage', e);
     }
     // Seed if empty
-    localStorage.setItem(STORAGE_KEY_APPLICATIONS, JSON.stringify(SEED_APPLICATIONS));
+    safeSetStorage(STORAGE_KEY_APPLICATIONS, SEED_APPLICATIONS);
     return SEED_APPLICATIONS;
   },
 
@@ -345,21 +393,69 @@ export const PartnerStore = {
   },
 
   saveApplication: (app: PartnerApplication): void => {
+    const sanitizedApp = sanitizeApplicationForStorage(app);
     const list = PartnerStore.getApplications();
     const index = list.findIndex(item => item.id === app.id);
     if (index >= 0) {
-      list[index] = { ...app, updatedAt: new Date().toISOString() };
+      list[index] = { ...sanitizedApp, updatedAt: new Date().toISOString() };
     } else {
-      list.unshift(app);
+      list.unshift(sanitizedApp);
     }
-    localStorage.setItem(STORAGE_KEY_APPLICATIONS, JSON.stringify(list));
+    safeSetStorage(STORAGE_KEY_APPLICATIONS, list);
 
-    // Asynchronously synchronize with MongoDB
+    // Asynchronously synchronize full docket with MongoDB Atlas (fire & forget)
     fetch(`${API_URL}/applications`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(app)
-    }).catch(err => console.warn('[MongoDB Sync]', err.message));
+    }).catch(() => {
+      // Backend may be offline during dev; silent fallback
+    });
+  },
+
+  saveApplicationAsync: async (app: PartnerApplication): Promise<{ success: boolean; storage: string }> => {
+    // Save sanitized copy locally without throwing QuotaExceededError
+    PartnerStore.saveApplication(app);
+
+    try {
+      const res = await fetch(`${API_URL}/applications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(app)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return { success: true, storage: data.storage || 'mongodb_atlas' };
+      }
+    } catch (e) {
+      // Backend server is not running on port 5000; safely acknowledge local storage
+    }
+    return { success: true, storage: 'local_cache' };
+  },
+
+  fetchApplicationByIdFromMongoDB: async (id: string): Promise<PartnerApplication | null> => {
+    try {
+      const res = await fetch(`${API_URL}/applications/${encodeURIComponent(id)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.application) {
+          const localList = PartnerStore.getApplications();
+          const idx = localList.findIndex(a => a.id.toUpperCase() === id.toUpperCase());
+          const sanitized = sanitizeApplicationForStorage(data.application);
+          if (idx >= 0) {
+            localList[idx] = sanitized;
+          } else {
+            localList.unshift(sanitized);
+          }
+          safeSetStorage(STORAGE_KEY_APPLICATIONS, localList);
+          // Return FULL application including fileDataUrl so admin can view documents
+          return data.application;
+        }
+      }
+    } catch (e) {
+      // silent fallback
+    }
+    return null;
   },
 
   fetchFromMongoDB: async (): Promise<PartnerApplication[]> => {
@@ -371,14 +467,32 @@ export const PartnerStore = {
           const localList = PartnerStore.getApplications();
           const mergedMap = new Map<string, PartnerApplication>();
           localList.forEach(a => mergedMap.set(a.id, a));
-          data.applications.forEach((a: PartnerApplication) => mergedMap.set(a.id, a));
+          
+          // Keep raw MongoDB application with fileDataUrl intact in memory
+          data.applications.forEach((a: PartnerApplication) => {
+            const existing = mergedMap.get(a.id);
+            if (existing) {
+              const mergedDocs = (a.documents || []).map(doc => {
+                const existDoc = (existing.documents || []).find(d => d.id === doc.id);
+                return {
+                  ...doc,
+                  fileDataUrl: doc.fileDataUrl || existDoc?.fileDataUrl
+                };
+              });
+              mergedMap.set(a.id, { ...a, documents: mergedDocs });
+            } else {
+              mergedMap.set(a.id, a);
+            }
+          });
+          
           const merged = Array.from(mergedMap.values());
-          localStorage.setItem(STORAGE_KEY_APPLICATIONS, JSON.stringify(merged));
+          // Only sanitize when writing to localStorage to prevent QuotaExceededError
+          safeSetStorage(STORAGE_KEY_APPLICATIONS, merged.map(sanitizeApplicationForStorage));
           return merged;
         }
       }
     } catch (e) {
-      console.warn('[MongoDB Sync Warning]', e);
+      // Backend offline; safely fallback to local cache
     }
     return PartnerStore.getApplications();
   },
@@ -495,7 +609,7 @@ export const PartnerStore = {
     } catch (e) {
       console.error('Error reading leads from localStorage', e);
     }
-    localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(SEED_LEADS));
+    safeSetStorage(STORAGE_KEY_LEADS, SEED_LEADS);
     return SEED_LEADS;
   },
 
@@ -523,14 +637,16 @@ export const PartnerStore = {
     };
 
     leads.unshift(newLead);
-    localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(leads));
+    safeSetStorage(STORAGE_KEY_LEADS, leads);
 
     // Push to MongoDB
     fetch(`${API_URL}/leads`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newLead)
-    }).catch(err => console.warn('[MongoDB Lead Sync]', err.message));
+    }).catch(() => {
+      // offline fallback
+    });
 
     return {
       success: true,
@@ -553,7 +669,56 @@ export const PartnerStore = {
       leads[idx].notes = notes;
     }
 
-    localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(leads));
+    safeSetStorage(STORAGE_KEY_LEADS, leads);
+
+    // Synchronize lead status with MongoDB Atlas
+    fetch(`${API_URL}/leads/${encodeURIComponent(leadId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, notes })
+    }).catch(() => {
+      // offline fallback
+    });
+
     return leads[idx];
+  },
+
+  fetchLeadsFromMongoDB: async (): Promise<InvestorLead[]> => {
+    try {
+      const res = await fetch(`${API_URL}/leads`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.leads && Array.isArray(data.leads) && data.leads.length > 0) {
+          const localLeads = PartnerStore.getLeads();
+          const leadMap = new Map<string, InvestorLead>();
+          localLeads.forEach(l => leadMap.set(l.id, l));
+          data.leads.forEach((l: InvestorLead) => leadMap.set(l.id, l));
+          const merged = Array.from(leadMap.values());
+          safeSetStorage(STORAGE_KEY_LEADS, merged);
+          return merged;
+        }
+      }
+    } catch (e) {
+      // offline fallback
+    }
+    return PartnerStore.getLeads();
+  },
+
+  checkMongoDBHealth: async (): Promise<{ online: boolean; mongodb?: string; database?: string; count?: { applications: number; leads: number } }> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/health`);
+      if (res.ok) {
+        const data = await res.json();
+        return {
+          online: true,
+          mongodb: data.mongodb,
+          database: data.activeDatabase,
+          count: data.stats
+        };
+      }
+    } catch (e) {
+      // Backend server is starting or not currently reachable
+    }
+    return { online: false };
   }
 };

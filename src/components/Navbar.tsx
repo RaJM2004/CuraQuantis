@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, ChevronDown } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
+  const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCapabilitiesOpen, setIsCapabilitiesOpen] = useState(false);
@@ -69,9 +70,11 @@ const Navbar = () => {
     { name: 'About', href: '/about' }
   ];
 
+  const isSolidNavbar = isScrolled || location.pathname.startsWith('/portal') || location.pathname.startsWith('/partner-portal');
+
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md' : 'bg-white/80 backdrop-blur-md'}`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isSolidNavbar ? 'bg-white shadow-md' : 'bg-white/80 backdrop-blur-md'}`}
     >
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-20 max-w-7xl mx-auto">
@@ -251,7 +254,14 @@ const Navbar = () => {
             >
               Virtual Clinic Tour
             </a>
-            <Link to="/portal/login" className="text-gray-700 hover:text-blue-600 font-medium text-xs px-3 py-1.5 rounded-full border border-gray-200 hover:border-blue-400 whitespace-nowrap flex-shrink-0 transition-all">
+            <Link 
+              to="/portal/login" 
+              className={`font-medium text-xs px-3 py-1.5 rounded-full border whitespace-nowrap flex-shrink-0 transition-all ${
+                location.pathname === '/portal/login'
+                  ? 'bg-blue-50 text-blue-700 border-blue-400 font-semibold shadow-xs'
+                  : 'text-gray-700 hover:text-blue-600 border-gray-200 hover:border-blue-400'
+              }`}
+            >
               Portal Sign In
             </Link>
             <Link to="/contact" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full transition-all duration-300 text-xs xl:text-sm font-medium whitespace-nowrap flex-shrink-0 shadow-sm">

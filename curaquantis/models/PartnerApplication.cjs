@@ -2,8 +2,22 @@ const mongoose = require('mongoose');
 
 const DocumentSchema = new mongoose.Schema({
   id: { type: String, required: true },
-  
-  
+  name: { type: String, required: true },
+  category: { type: String },
+  fileName: { type: String, default: '' },
+  fileSize: { type: String, default: '' },
+  uploadedAt: { type: String, default: '' },
+  status: { type: String, default: 'pending' },
+  isMandatory: { type: Boolean, default: false },
+  notes: { type: String },
+  rejectionReason: { type: String },
+  fileDataUrl: { type: String },
+  mimeType: { type: String }
+}, { _id: false });
+
+const TimelineSchema = new mongoose.Schema({
+  status: { type: String, required: true },
+  label: { type: String, required: true },
   completedAt: { type: String },
   note: { type: String }
 }, { _id: false });
