@@ -149,14 +149,11 @@ const Contact: React.FC = () => {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-xl font-semibold text-blue-900 mb-2">Office Location</h3>
-                  <p className="text-gray-600"><p className="font-semibold text-black">Registered Office</p>Unit G3, Plot No:39.40 & 41,
-                    Sree Sai Hills, Gokul Plots,
-                    Hafeezpet, KPHB Phase 13 road, KPHB Colony,
-                    Hyderabad- 500085, Telangana State.</p>
+                  <p className="text-gray-600"><span className="font-semibold text-black">Corporate Office</span><br />T-Hub's main facility (Phase 2), Plot No 1/C, Sy No 83/1, Raidurgam Panmaktha, Hyderabad Knowledge City, Serilingampally, Hyderabad, Telangana 500081</p>
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-blue-900 mb-2">Contact Info</h3>
-                  <p className="text-gray-600">Email: support@curaquantis.com<br />Phone: +91 7036955133</p>
+                  <p className="text-gray-600">Email: support@curaquantis.com<br />Phone: +91 7036905151</p>
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-blue-900 mb-2">Business Hours</h3>

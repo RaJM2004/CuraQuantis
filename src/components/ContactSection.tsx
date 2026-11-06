@@ -65,7 +65,7 @@ const ContactSection = () => {
     {
       icon: Phone,
       title: 'Call Us',
-      value: '+91 7036955133',
+      value: '+91 7036905151',
       description: 'Available between 9am to 6pm IST'
     },
     {

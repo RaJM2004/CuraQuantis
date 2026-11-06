@@ -20,29 +20,18 @@ const Footer = () => {
       { name: 'Predictive ICU Monitoring', path: '/solutions#icu-monitoring' },
       { name: 'Surgical AI Assistance', path: '/solutions#surgical-ai' }
     ],
-    'Industries': [
-      { name: 'Healthcare', path: '/industries/healthcare' },
-      { name: 'Robots', path: 'https://zerokostrobo.netlify.app/', isExternal: true }
-    ],
     'Company': [
       { name: 'About Us', path: '/about' },
       { name: 'Insights', path: '/insights' },
       { name: 'Academy', path: 'https://academy.genquantaa.com/course/curaquantis-course', isExternal: true },
       { name: 'Contact', path: '/contact' }
     ]
-    // 'Resources': [
-    //   { name: 'Documentation', path: '#' },
-    //   { name: 'Case Studies', path: '#' },
-    //   { name: 'White Papers', path: '#' },
-    //   { name: 'Blog', path: '#' },
-    //   { name: 'Support', path: '#' }
-    // ]
   };
 
   return (
     <footer className="bg-blue-50/30 border-t border-blue-100/50">
       <div className="container mx-auto px-6 py-20">
-        <div className="grid lg:grid-cols-5 gap-16 mb-16">
+        <div className="grid lg:grid-cols-4 gap-16 mb-16">
           <div className="lg:col-span-2">
             <div className="mb-8">
               <Link to="/" className="text-2xl font-light text-blue-900 hover:text-blue-700 transition-colors duration-300">
@@ -62,18 +51,15 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="w-4 h-4 text-blue-600" strokeWidth={1} />
-                <a href="tel:+917036955133" className="minimal-text hover:text-blue-900 transition-colors duration-300">
-                  +91 7036955133
+                <a href="tel:+917036905151" className="minimal-text hover:text-blue-900 transition-colors duration-300">
+                  +91 7036905151
                 </a>
               </div>
-              <div className="flex items-center space-x-5">
-                <MapPin className="w-4 h-4 text-blue-600" strokeWidth={1} />
-                <span className="minimal-text"><h1 className="text-blue-900 font-medium">Registered Office</h1>Unit G3, Plot No:39.40 & 41,
-                  Sree Sai Hills, Gokul Plots,
-                  Hafeezpet, KPHB Phase 13 road, KPHB Colony,
-                  Hyderabad- 500085, Telangana State.
-                </span>
-                <span className="minimal-text"><h1 className="text-blue-900 font-medium">Corporate Office</h1>T-Hub's main facility (Phase 2), Plot No 1/C, Sy No 83/1, Raidurgam Panmaktha, Hyderabad Knowledge City, Serilingampally, Hyderabad, Telangana 500081
+              <div className="flex items-start space-x-3">
+                <MapPin className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" strokeWidth={1} />
+                <span className="minimal-text">
+                  <h1 className="text-blue-900 font-medium">Corporate Office</h1>
+                  T-Hub's main facility (Phase 2), Plot No 1/C, Sy No 83/1, Raidurgam Panmaktha, Hyderabad Knowledge City, Serilingampally, Hyderabad, Telangana 500081
                 </span>
               </div>
             </div>

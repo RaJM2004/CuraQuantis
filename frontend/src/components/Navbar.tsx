@@ -6,8 +6,8 @@ const Navbar = () => {
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<'solutions' | 'capabilities' | 'workflows' | null>(null);
-  const [mobileDropdown, setMobileDropdown] = useState<'solutions' | 'capabilities' | 'workflows' | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<'solutions' | 'workflows' | null>(null);
+  const [mobileDropdown, setMobileDropdown] = useState<'solutions' | 'workflows' | null>(null);
 
   useEffect(() => {
     setActiveDropdown(null);
@@ -36,10 +36,6 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const capabilities = [
-    { name: 'Healthcare', href: '/industries/healthcare', subdomains: [{ name: 'Gen AI', id: 'gen-ai' }, { name: 'Agentic AI', id: 'agentic-ai' }] },
-    { name: 'Robots', href: 'https://zerokostrobo.netlify.app/', subdomains: [{ name: 'AI Robotics', id: 'ai-robotics' }, { name: 'AI Robot Control', id: 'ai-robot-control' }], isExternal: true }
-  ];
 
   const products = [
     { name: 'Non Invasive Ventilator', id: 'ventilator', path: '/products/ventilator' },
@@ -134,67 +130,6 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* Capabilities Dropdown */}
-            <div
-              className="relative group flex-shrink-0"
-              onMouseEnter={() => setActiveDropdown('capabilities')}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <button
-                type="button"
-                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light whitespace-nowrap py-2"
-                onClick={() => setActiveDropdown(activeDropdown === 'capabilities' ? null : 'capabilities')}
-                aria-expanded={activeDropdown === 'capabilities'}
-              >
-                <span>Capabilities</span>
-                <ChevronDown className={`ml-1 w-3.5 h-3.5 transition-transform duration-300 ${activeDropdown === 'capabilities' ? 'rotate-180' : ''}`} />
-              </button>
-              {activeDropdown === 'capabilities' && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 w-[700px] pt-2 z-50">
-                  <div className="bg-white rounded-[40px] shadow-2xl border border-blue-50 p-12 animate-fade-in-up">
-                    <div className="grid grid-cols-2 gap-12">
-                      {capabilities.map((industry) => (
-                        <div key={industry.name} className="space-y-6">
-                          <div className="pb-3 border-b border-blue-100">
-                            {industry.isExternal ? (
-                              <a
-                                href={industry.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xl font-light text-blue-900 hover:text-blue-600 transition-colors"
-                                onClick={() => setActiveDropdown(null)}
-                              >
-                                {industry.name}
-                              </a>
-                            ) : (
-                              <Link
-                                to={industry.href}
-                                className="text-xl font-light text-blue-900 hover:text-blue-600 transition-colors"
-                                onClick={() => setActiveDropdown(null)}
-                              >
-                                {industry.name}
-                              </Link>
-                            )}
-                          </div>
-                          <div className="space-y-3">
-                            {industry.subdomains.map((subdomain) => (
-                              <Link
-                                key={subdomain.id}
-                                to={`${industry.href}#${subdomain.id}`}
-                                className="block text-sm text-gray-500 hover:text-blue-600 transition-all hover:translate-x-2"
-                                onClick={() => setActiveDropdown(null)}
-                              >
-                                {subdomain.name}
-                              </Link>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Workflows Dropdown */}
             <div
@@ -326,64 +261,6 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* Mobile Capabilities */}
-            <div className="py-3">
-              <button
-                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
-                onClick={() => setMobileDropdown(mobileDropdown === 'capabilities' ? null : 'capabilities')}
-              >
-                Capabilities
-                <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${mobileDropdown === 'capabilities' ? 'rotate-180' : ''}`} />
-              </button>
-              {mobileDropdown === 'capabilities' && (
-                <div className="pl-4 mt-2 space-y-4">
-                  {capabilities.map((industry) => (
-                    <div key={industry.name} className="space-y-2">
-                      {industry.isExternal ? (
-                        <a
-                          href={industry.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
-                          onClick={() => {
-                            setMobileDropdown(null);
-                            setIsMobileMenuOpen(false);
-                          }}
-                        >
-                          {industry.name}
-                        </a>
-                      ) : (
-                        <Link
-                          to={industry.href}
-                          className="block text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
-                          onClick={() => {
-                            setMobileDropdown(null);
-                            setIsMobileMenuOpen(false);
-                          }}
-                        >
-                          {industry.name}
-                        </Link>
-                      )}
-                      <div className="pl-4 space-y-2">
-                        {industry.subdomains.map((subdomain) => (
-                          <Link
-                            key={subdomain.id}
-                            to={`${industry.href}#${subdomain.id}`}
-                            className="block text-sm text-gray-900 hover:text-blue-600 transition-colors duration-300 border-l-2 border-transparent hover:border-blue-400 pl-4"
-                            onClick={() => {
-                              setMobileDropdown(null);
-                              setIsMobileMenuOpen(false);
-                            }}
-                          >
-                            {subdomain.name}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
 
             {/* Mobile Workflows */}
             <div className="py-3">
