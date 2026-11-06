@@ -1,8 +1,62 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, ArrowRight, Globe, Building2, MapPin, Sparkles, Award, LogIn } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Globe, Building2, MapPin, Sparkles, Award, LogIn, CheckCircle2 } from 'lucide-react';
 
 export const PartnerEcosystemTeaser: React.FC = () => {
+  const pathways = [
+    {
+      id: 'pan-india',
+      title: 'Pan-India Channel Partner',
+      badge: 'National Master Network',
+      badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/30',
+      description: 'Nationwide institutional leadership. Identify, coordinate, and develop Regional Channel Partners while orchestrating large-scale corporate healthcare and hospital integration.',
+      eligibility: [
+        'National presence across multiple Indian zones',
+        'Proven track record in medical device/diagnostics distribution',
+        'Corporate entity with audited financials (min 5 years)',
+        'Logistical cold-chain capability and dedicated zonal field teams',
+        'Investment commitment ₹5 Cr - ₹15 Cr+'
+      ],
+      authorityScope: 'Authorized to identify and recommend Regional Channel Partners. Cannot sign binding contracts or guarantee ROI on behalf of CuraQuantis™.',
+      accentGradient: 'from-blue-700 via-indigo-600 to-indigo-900',
+      cta: 'Apply for Pan-India Partnership'
+    },
+    {
+      id: 'regional',
+      title: 'Regional Channel Partner',
+      badge: 'State & Zonal Lead',
+      badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/30',
+      description: 'Drive high-impact regional penetration across designated States or UTs. Build doctor networks, healthcare centers, and introduce vetted prospective Franchise Investors.',
+      eligibility: [
+        'Strong local commercial relationships in target State/UT',
+        'Experience in pathology, imaging, or healthcare franchise networks',
+        'Operational office and local technical support readiness',
+        '₹2,50,000 + GST Onboarding package upon CuraQuantis™ screening approval',
+        'Investment capability ₹50 Lakhs - ₹3 Crores'
+      ],
+      authorityScope: 'Authorized to introduce and forward prospective Franchise Investors. Formally appointed ONLY by CuraQuantis™.',
+      accentGradient: 'from-teal-600 via-cyan-600 to-blue-700',
+      cta: 'Apply for Regional Partnership'
+    },
+    {
+      id: 'franchise',
+      title: 'CuraQuantis™ Franchise Investor',
+      badge: 'Smart Diagnostic Center',
+      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-400/30',
+      description: 'Own and operate a cutting-edge CuraQuantis™ AI Diagnostic & Smart Clinic hub. Equipped with real-time biometric analysis, digital pathology, and non-invasive screening technologies.',
+      eligibility: [
+        '1,200 - 3,500 sq.ft prime commercial property on ground/first floor',
+        'Passionate about democratizing AI preventive diagnostics',
+        'Financial capability of ₹1.5 Cr - ₹3 Cr per diagnostic center',
+        'Adherence to strict NABL & AERB diagnostic protocols',
+        'Approved solely by CuraQuantis™ Corporate Scrutiny Board'
+      ],
+      authorityScope: 'Direct Franchise Agreement executed solely by CuraQuantis™. Channel Partners cannot sign or commit terms.',
+      accentGradient: 'from-amber-600 via-orange-600 to-rose-700',
+      cta: 'Apply for Franchise Center'
+    }
+  ];
+
   return (
     <section className="py-20 bg-gradient-to-b from-slate-900 via-blue-950 to-slate-950 text-white relative overflow-hidden">
       <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
@@ -46,73 +100,63 @@ export const PartnerEcosystemTeaser: React.FC = () => {
           </div>
         </div>
 
-        {/* 3 Pathway Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1 */}
-          <div className="bg-white/5 border border-white/10 hover:border-cyan-400/40 rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1 hover:bg-white/10 flex flex-col justify-between group">
-            <div>
-              <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center font-bold text-xs mb-4 border border-indigo-500/30">
-                01
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">
-                Pan-India Channel Partner
-              </h3>
-              <p className="text-xs text-slate-300 font-light leading-relaxed mb-4">
-                Master national distribution across multiple zones. Orchestrate enterprise healthcare integration and regional partner networks.
-              </p>
-            </div>
-            <Link
-              to="/apply/pan-india"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-300 hover:text-white transition-colors pt-4 border-t border-white/10"
+        {/* 3 Pathway Cards Grid Matching Screenshot */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {pathways.map((p) => (
+            <div
+              key={p.id}
+              className="bg-white rounded-3xl border border-slate-200/90 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col overflow-hidden group hover:-translate-y-1.5 text-slate-800"
             >
-              <span>Apply Pan-India Tier</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+              {/* Card Top Banner */}
+              <div className={`p-6 sm:p-7 bg-gradient-to-r ${p.accentGradient} text-white`}>
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${p.badgeColor}`}>
+                  {p.badge}
+                </span>
+                <h3 className="text-xl font-bold mt-4 mb-2 text-white">
+                  {p.title}
+                </h3>
+                <p className="text-xs text-white/90 font-light leading-relaxed">
+                  {p.description}
+                </p>
+              </div>
 
-          {/* Card 2 */}
-          <div className="bg-white/5 border border-white/10 hover:border-cyan-400/40 rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1 hover:bg-white/10 flex flex-col justify-between group">
-            <div>
-              <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-bold text-xs mb-4 border border-cyan-500/30">
-                02
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">
-                Regional Channel Partner
-              </h3>
-              <p className="text-xs text-slate-300 font-light leading-relaxed mb-4">
-                Lead clinical diagnostics deployment across specific States or UTs. Build local doctor networks and forward qualified franchise leads.
-              </p>
-            </div>
-            <Link
-              to="/apply/regional"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-300 hover:text-white transition-colors pt-4 border-t border-white/10"
-            >
-              <span>Apply Regional Tier</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+              {/* Eligibility checklist */}
+              <div className="p-6 sm:p-7 flex-grow space-y-6 bg-white">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Key Eligibility Criteria</span>
+                  </h4>
+                  <ul className="space-y-2 text-xs text-slate-600">
+                    {p.eligibility.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-          {/* Card 3 */}
-          <div className="bg-white/5 border border-white/10 hover:border-cyan-400/40 rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1 hover:bg-white/10 flex flex-col justify-between group">
-            <div>
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-xs mb-4 border border-amber-500/30">
-                03
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 text-[11px] text-slate-500 space-y-1">
+                  <span className="font-semibold text-slate-800 uppercase tracking-wider text-[10px] block">
+                    Authority Boundary:
+                  </span>
+                  <p className="leading-relaxed">{p.authorityScope}</p>
+                </div>
               </div>
-              <h3 className="text-lg font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">
-                Franchise Investor
-              </h3>
-              <p className="text-xs text-slate-300 font-light leading-relaxed mb-4">
-                Own and operate a cutting-edge CuraQuantis™ AI Diagnostic & Smart Clinic center equipped with automated preventive screening.
-              </p>
+
+              {/* CTA Button */}
+              <div className="p-6 pt-0 bg-white">
+                <Link
+                  to={`/apply/${p.id}`}
+                  className="w-full py-3.5 px-4 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-md group-hover:bg-blue-600"
+                >
+                  <span>{p.cta}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
-            <Link
-              to="/apply/franchise"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-300 hover:text-white transition-colors pt-4 border-t border-white/10"
-            >
-              <span>Apply Franchise Center</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+          ))}
         </div>
 
         {/* Territory & Field Assist Bar */}

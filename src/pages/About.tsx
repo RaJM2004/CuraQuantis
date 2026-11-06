@@ -11,13 +11,13 @@ const About: React.FC = () => {
       name: 'Dharani N Viswanath',
       role: 'Chairman and Managing Director of CuraQuantis Health Clinics Pvt Ltd',
       image: '/Dharni.jpeg',
-      email: 'mailto:dv_nalli@curaquantis.com'
+      email: 'mailto:support@curaquantis.com'
     },
     {
-      name: 'Ananya Parikibandla',
-      role: 'Co Founder and Executive Director of CuraQuantis Health Clinics Pvt Ltd',
+      name: 'Ananya Thirukkovaluri',
+      role: 'Chief Healthcare Operations Officer (CHOO) CuraQuantis Health Clinics Pvt Ltd',
       image: '/Ananya.png',
-      email: 'mailto:ananya@curaquantis.com'
+      email: 'mailto:support@curaquantis.com'
     }
   ];
 
