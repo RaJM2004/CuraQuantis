@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, ArrowRight, Globe, Building2, MapPin, Sparkles, Award } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Globe, Building2, MapPin, Sparkles, Award, LogIn } from 'lucide-react';
 
 export const PartnerEcosystemTeaser: React.FC = () => {
   return (
@@ -26,13 +26,23 @@ export const PartnerEcosystemTeaser: React.FC = () => {
             <p className="text-slate-300 text-sm font-light leading-relaxed mb-4">
               Our field work has started nationwide. We invite visionary Channel Partners, Regional Leaders, and Franchise Investors to build India’s premier AI-powered clinical diagnostics network.
             </p>
-            <Link
-              to="/partner-portal"
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400 hover:text-cyan-300 transition-colors"
-            >
-              <span>Explore Portal Hub & Track Applications</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                to="/partner-portal"
+                className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400 hover:text-cyan-300 transition-colors"
+              >
+                <span>Explore Portal Hub & Track</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <span className="text-slate-500">•</span>
+              <Link
+                to="/portal/login"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-cyan-300 transition-colors"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Portal Sign In</span>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -114,12 +124,21 @@ export const PartnerEcosystemTeaser: React.FC = () => {
             </span>
           </div>
 
-          <Link
-            to="/partner-portal"
-            className="px-5 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold whitespace-nowrap shadow-md transition-colors"
-          >
-            Open National Portal
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              to="/portal/login"
+              className="px-4 py-2 rounded-xl border border-white/20 hover:border-cyan-400 text-white font-medium whitespace-nowrap hover:bg-white/10 transition-colors flex items-center gap-2"
+            >
+              <LogIn className="w-3.5 h-3.5 text-cyan-300" />
+              <span>Portal Sign In</span>
+            </Link>
+            <Link
+              to="/partner-portal"
+              className="px-5 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold whitespace-nowrap shadow-md transition-colors"
+            >
+              Open National Portal
+            </Link>
+          </div>
         </div>
       </div>
     </section>

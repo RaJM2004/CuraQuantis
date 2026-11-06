@@ -10,7 +10,6 @@ import IndustriesSection from '../components/IndustriesSection';
 import WhyAISection from '../components/WhyAISection';
 import SolutionsSection from '../components/SolutionsSection';
 import AboutSection from '../components/AboutSection';
-import DirectorsSection from '../components/DirectorsSection';
 import ContactSection from '../components/ContactSection';
 import PartnerEcosystemTeaser from '../components/PartnerEcosystemTeaser';
 import Footer from '../components/Footer';
@@ -55,7 +54,6 @@ const Index = () => {
       <WhyAISection />
       <SolutionsSection />
       <AboutSection />
-      <DirectorsSection />
       <ContactSection />
       
       <section className="py-24 bg-white relative overflow-hidden">

@@ -6,10 +6,14 @@ const Navbar = () => {
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isCapabilitiesOpen, setIsCapabilitiesOpen] = useState(false);
-  const [isProductsOpen, setIsProductsOpen] = useState(false);
-  const [isSolutionsOpen, setIsSolutionsOpen] = useState(false);
-  const [isWorkflowsOpen, setIsWorkflowsOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<'solutions' | 'capabilities' | 'workflows' | null>(null);
+  const [mobileDropdown, setMobileDropdown] = useState<'solutions' | 'capabilities' | 'workflows' | null>(null);
+
+  useEffect(() => {
+    setActiveDropdown(null);
+    setIsMobileMenuOpen(false);
+    setMobileDropdown(null);
+  }, [location.pathname, location.hash]);
 
   const quickWorkflows = [
     { id: 'ecosystem', title: 'CuraQuantis Ecosystem', subtitle: 'Connected pan-India healthcare architecture' },
@@ -95,20 +99,22 @@ const Navbar = () => {
 
           <div className="hidden lg:flex items-center gap-2 xl:gap-3.5 2xl:gap-5 text-xs xl:text-sm flex-nowrap">
             {/* Solutions Dropdown */}
-            <div className="relative group flex-shrink-0">
+            <div
+              className="relative group flex-shrink-0"
+              onMouseEnter={() => setActiveDropdown('solutions')}
+              onMouseLeave={() => setActiveDropdown(null)}
+            >
               <button
-                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light whitespace-nowrap py-1"
-                onClick={() => setIsSolutionsOpen(!isSolutionsOpen)}
-                onMouseEnter={() => setIsSolutionsOpen(true)}
+                type="button"
+                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light whitespace-nowrap py-2"
+                onClick={() => setActiveDropdown(activeDropdown === 'solutions' ? null : 'solutions')}
+                aria-expanded={activeDropdown === 'solutions'}
               >
                 <span>HealthTech AI</span>
-                <ChevronDown className={`ml-1 w-3.5 h-3.5 transition-transform duration-300 ${isSolutionsOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`ml-1 w-3.5 h-3.5 transition-transform duration-300 ${activeDropdown === 'solutions' ? 'rotate-180' : ''}`} />
               </button>
-              {isSolutionsOpen && (
-                <div
-                  className="absolute top-full left-1/2 -translate-x-1/2 w-[900px] mt-4"
-                  onMouseLeave={() => setIsSolutionsOpen(false)}
-                >
+              {activeDropdown === 'solutions' && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 w-[900px] pt-2 z-50">
                   <div className="bg-white rounded-[40px] shadow-2xl border border-blue-50 p-12 animate-fade-in-up">
                     <div className="grid grid-cols-2 gap-x-12 gap-y-6">
                       {solutions.map((solution) => (
@@ -116,7 +122,7 @@ const Navbar = () => {
                           key={solution.id}
                           to={`/solutions#${solution.id}`}
                           className="group/item flex items-center space-x-4 p-4 rounded-2xl hover:bg-blue-50 transition-all duration-300"
-                          onClick={() => setIsSolutionsOpen(false)}
+                          onClick={() => setActiveDropdown(null)}
                         >
                           <div className="w-2 h-2 rounded-full bg-blue-200 group-hover/item:bg-blue-600 transition-colors"></div>
                           <span className="text-gray-700 font-light group-hover/item:text-blue-900 group-hover/item:translate-x-1 transition-all">{solution.name}</span>
@@ -129,31 +135,43 @@ const Navbar = () => {
             </div>
 
             {/* Capabilities Dropdown */}
-            <div className="relative group flex-shrink-0">
+            <div
+              className="relative group flex-shrink-0"
+              onMouseEnter={() => setActiveDropdown('capabilities')}
+              onMouseLeave={() => setActiveDropdown(null)}
+            >
               <button
-                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light whitespace-nowrap py-1"
-                onClick={() => setIsCapabilitiesOpen(!isCapabilitiesOpen)}
-                onMouseEnter={() => setIsCapabilitiesOpen(true)}
+                type="button"
+                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light whitespace-nowrap py-2"
+                onClick={() => setActiveDropdown(activeDropdown === 'capabilities' ? null : 'capabilities')}
+                aria-expanded={activeDropdown === 'capabilities'}
               >
                 <span>Capabilities</span>
-                <ChevronDown className={`ml-1 w-3.5 h-3.5 transition-transform duration-300 ${isCapabilitiesOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`ml-1 w-3.5 h-3.5 transition-transform duration-300 ${activeDropdown === 'capabilities' ? 'rotate-180' : ''}`} />
               </button>
-              {isCapabilitiesOpen && (
-                <div
-                  className="absolute top-full left-1/2 -translate-x-1/2 w-[700px] mt-4"
-                  onMouseLeave={() => setIsCapabilitiesOpen(false)}
-                >
+              {activeDropdown === 'capabilities' && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 w-[700px] pt-2 z-50">
                   <div className="bg-white rounded-[40px] shadow-2xl border border-blue-50 p-12 animate-fade-in-up">
                     <div className="grid grid-cols-2 gap-12">
                       {capabilities.map((industry) => (
                         <div key={industry.name} className="space-y-6">
                           <div className="pb-3 border-b border-blue-100">
                             {industry.isExternal ? (
-                              <a href={industry.href} target="_blank" rel="noopener noreferrer" className="text-xl font-light text-blue-900 hover:text-blue-600 transition-colors">
+                              <a
+                                href={industry.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xl font-light text-blue-900 hover:text-blue-600 transition-colors"
+                                onClick={() => setActiveDropdown(null)}
+                              >
                                 {industry.name}
                               </a>
                             ) : (
-                              <Link to={industry.href} className="text-xl font-light text-blue-900 hover:text-blue-600 transition-colors">
+                              <Link
+                                to={industry.href}
+                                className="text-xl font-light text-blue-900 hover:text-blue-600 transition-colors"
+                                onClick={() => setActiveDropdown(null)}
+                              >
                                 {industry.name}
                               </Link>
                             )}
@@ -164,7 +182,7 @@ const Navbar = () => {
                                 key={subdomain.id}
                                 to={`${industry.href}#${subdomain.id}`}
                                 className="block text-sm text-gray-500 hover:text-blue-600 transition-all hover:translate-x-2"
-                                onClick={() => setIsCapabilitiesOpen(false)}
+                                onClick={() => setActiveDropdown(null)}
                               >
                                 {subdomain.name}
                               </Link>
@@ -179,20 +197,21 @@ const Navbar = () => {
             </div>
 
             {/* Workflows Dropdown */}
-            <div className="relative group flex-shrink-0">
+            <div
+              className="relative group flex-shrink-0"
+              onMouseEnter={() => setActiveDropdown('workflows')}
+              onMouseLeave={() => setActiveDropdown(null)}
+            >
               <Link
                 to="/workflows"
-                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-normal whitespace-nowrap py-1"
-                onMouseEnter={() => setIsWorkflowsOpen(true)}
+                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-normal whitespace-nowrap py-2"
+                onClick={() => setActiveDropdown(null)}
               >
                 <span className="text-blue-700 hover:text-blue-600 font-medium">Workflows</span>
-                <ChevronDown className={`ml-1 w-3.5 h-3.5 transition-transform duration-300 ${isWorkflowsOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`ml-1 w-3.5 h-3.5 transition-transform duration-300 ${activeDropdown === 'workflows' ? 'rotate-180' : ''}`} />
               </Link>
-              {isWorkflowsOpen && (
-                <div
-                  className="absolute top-full left-1/2 -translate-x-1/2 w-[720px] mt-4"
-                  onMouseLeave={() => setIsWorkflowsOpen(false)}
-                >
+              {activeDropdown === 'workflows' && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 w-[720px] pt-2 z-50">
                   <div className="bg-white rounded-[32px] shadow-2xl border border-blue-50 p-8 animate-fade-in-up">
                     <div className="flex items-center justify-between pb-3 mb-4 border-b border-blue-100">
                       <div>
@@ -202,7 +221,7 @@ const Navbar = () => {
                       <Link
                         to="/workflows"
                         className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full transition-colors"
-                        onClick={() => setIsWorkflowsOpen(false)}
+                        onClick={() => setActiveDropdown(null)}
                       >
                         All 20 Workflows →
                       </Link>
@@ -213,7 +232,7 @@ const Navbar = () => {
                           key={item.id}
                           to={`/workflows?workflow=${item.id}`}
                           className="group/wf flex items-start space-x-3 p-2.5 rounded-xl hover:bg-blue-50 transition-all duration-200"
-                          onClick={() => setIsWorkflowsOpen(false)}
+                          onClick={() => setActiveDropdown(null)}
                         >
                           <div className="w-2 h-2 rounded-full bg-blue-400 group-hover/wf:bg-blue-600 mt-1.5 transition-colors" />
                           <div>
@@ -283,12 +302,12 @@ const Navbar = () => {
             <div className="py-3">
               <button
                 className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
-                onClick={() => setIsSolutionsOpen(!isSolutionsOpen)}
+                onClick={() => setMobileDropdown(mobileDropdown === 'solutions' ? null : 'solutions')}
               >
                 HealthTech AI
-                <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${isSolutionsOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${mobileDropdown === 'solutions' ? 'rotate-180' : ''}`} />
               </button>
-              {isSolutionsOpen && (
+              {mobileDropdown === 'solutions' && (
                 <div className="pl-4 mt-2 space-y-2">
                   {solutions.map((solution) => (
                     <Link
@@ -296,7 +315,7 @@ const Navbar = () => {
                       to={`/solutions#${solution.id}`}
                       className="block text-sm text-gray-900 hover:text-blue-600 transition-colors duration-300 border-l-2 border-transparent hover:border-blue-400 pl-4"
                       onClick={() => {
-                        setIsSolutionsOpen(false);
+                        setMobileDropdown(null);
                         setIsMobileMenuOpen(false);
                       }}
                     >
@@ -307,45 +326,16 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* Mobile Products
-            <div className="py-3">
-              <button
-                className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
-                onClick={() => setIsProductsOpen(!isProductsOpen)}
-              >
-                AI Products
-                <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${isProductsOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {isProductsOpen && (
-                <div className="pl-4 mt-2 space-y-2">
-                  {products.map((product) => (
-                    <Link
-                      key={product.id}
-                      to={product.path ? product.path : `/products#${product.id}`}
-                      className="block text-sm text-gray-900 hover:text-blue-600 transition-colors duration-300 border-l-2 border-transparent hover:border-blue-400 pl-4"
-                      onClick={() => {
-                        setIsProductsOpen(false);
-                        setIsMobileMenuOpen(false);
-                      }}
-                    >
-                      {product.name}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-            */}
-
             {/* Mobile Capabilities */}
             <div className="py-3">
               <button
                 className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
-                onClick={() => setIsCapabilitiesOpen(!isCapabilitiesOpen)}
+                onClick={() => setMobileDropdown(mobileDropdown === 'capabilities' ? null : 'capabilities')}
               >
                 Capabilities
-                <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${isCapabilitiesOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${mobileDropdown === 'capabilities' ? 'rotate-180' : ''}`} />
               </button>
-              {isCapabilitiesOpen && (
+              {mobileDropdown === 'capabilities' && (
                 <div className="pl-4 mt-2 space-y-4">
                   {capabilities.map((industry) => (
                     <div key={industry.name} className="space-y-2">
@@ -356,7 +346,7 @@ const Navbar = () => {
                           rel="noopener noreferrer"
                           className="block text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
                           onClick={() => {
-                            setIsCapabilitiesOpen(false);
+                            setMobileDropdown(null);
                             setIsMobileMenuOpen(false);
                           }}
                         >
@@ -367,7 +357,7 @@ const Navbar = () => {
                           to={industry.href}
                           className="block text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
                           onClick={() => {
-                            setIsCapabilitiesOpen(false);
+                            setMobileDropdown(null);
                             setIsMobileMenuOpen(false);
                           }}
                         >
@@ -381,7 +371,7 @@ const Navbar = () => {
                             to={`${industry.href}#${subdomain.id}`}
                             className="block text-sm text-gray-900 hover:text-blue-600 transition-colors duration-300 border-l-2 border-transparent hover:border-blue-400 pl-4"
                             onClick={() => {
-                              setIsCapabilitiesOpen(false);
+                              setMobileDropdown(null);
                               setIsMobileMenuOpen(false);
                             }}
                           >
@@ -399,18 +389,18 @@ const Navbar = () => {
             <div className="py-3">
               <button
                 className="flex items-center text-gray-900 hover:text-blue-600 transition-colors duration-300 font-medium"
-                onClick={() => setIsWorkflowsOpen(!isWorkflowsOpen)}
+                onClick={() => setMobileDropdown(mobileDropdown === 'workflows' ? null : 'workflows')}
               >
                 <span className="text-blue-700 font-medium">Workflows</span>
-                <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${isWorkflowsOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`ml-1 w-4 h-4 transition-transform duration-300 ${mobileDropdown === 'workflows' ? 'rotate-180' : ''}`} />
               </button>
-              {isWorkflowsOpen && (
+              {mobileDropdown === 'workflows' && (
                 <div className="pl-4 mt-2 space-y-2">
                   <Link
                     to="/workflows"
                     className="block text-sm font-bold text-blue-600 hover:text-blue-700 py-1"
                     onClick={() => {
-                      setIsWorkflowsOpen(false);
+                      setMobileDropdown(null);
                       setIsMobileMenuOpen(false);
                     }}
                   >
@@ -422,7 +412,7 @@ const Navbar = () => {
                       to={`/workflows?workflow=${item.id}`}
                       className="block text-sm text-gray-700 hover:text-blue-600 transition-colors py-1 pl-2 border-l-2 border-slate-200 hover:border-blue-500"
                       onClick={() => {
-                        setIsWorkflowsOpen(false);
+                        setMobileDropdown(null);
                         setIsMobileMenuOpen(false);
                       }}
                     >
