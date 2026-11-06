@@ -40,19 +40,8 @@ const HeroSection = () => {
 
       <div className="container mx-auto px-6 text-center relative z-10">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-6 fade-in flex flex-col items-center">
-            <Link
-              to="/partner-portal"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50/90 hover:bg-blue-100 border border-blue-200/80 text-blue-800 text-xs sm:text-sm font-semibold transition-all shadow-sm group mb-6"
-            >
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>National Partner & Franchise Opportunities Live</span>
-              <span className="text-blue-300">|</span>
-              <span className="text-blue-600 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                Apply Now <ArrowRight className="w-3.5 h-3.5" />
-              </span>
-            </Link>
-            <div className="w-1.5 h-12 bg-gradient-to-b from-blue-600 to-cyan-400 mx-auto rounded-full shadow-lg shadow-blue-300/50"></div>
+          <div className="mb-12 fade-in">
+            <div className="w-1.5 h-16 bg-gradient-to-b from-blue-600 to-cyan-400 mx-auto rounded-full shadow-lg shadow-blue-300/50"></div>
           </div>
 
           <h1 className="hero-text mb-6 fade-in stagger-1 !text-5xl md:!text-7xl leading-tight text-blue-900">
