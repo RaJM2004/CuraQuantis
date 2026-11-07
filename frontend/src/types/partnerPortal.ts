@@ -150,16 +150,46 @@ export interface PartnerApplication {
   documents: DocumentUpload[];
   clarifications: ClarificationMessage[];
   auditLogs: AuditLogEntry[];
-  paymentStatus: 'unbilled' | 'pending' | 'completed' | 'exempt';
+  paymentStatus: 'unbilled' | 'pending' | 'submitted' | 'completed' | 'rejected' | 'exempt';
   paymentDetails?: {
     amount: number;
     taxes: number;
     totalAmount: number;
     transactionId?: string;
+    utrNumber?: string;
+    paymentMode?: string;
+    payerName?: string;
+    payerBank?: string;
     paidAt?: string;
+    submittedAt?: string;
+    verifiedAt?: string;
+    verifiedBy?: string;
     invoiceNo?: string;
+    paymentProofUrl?: string;
+    paymentProofName?: string;
+    adminNote?: string;
   };
   trainingStatus?: 'not_started' | 'modules_assigned' | 'in_progress' | 'certified';
   agreementStatus?: 'drafting' | 'sent_for_signature' | 'executed';
   assignedRegionalPartnersCount?: number;
 }
+
+export interface OfficialBankDetails {
+  accountNumber: string;
+  bankName: string;
+  holderName: string;
+  ifscCode: string;
+  branch: string;
+  contactNumber: string;
+  accountType: string;
+}
+
+export const OFFICIAL_BANK_DETAILS: OfficialBankDetails = {
+  accountNumber: '45216693371',
+  bankName: 'State Bank of India',
+  holderName: 'GENQUANTIS PRIVATE LIMITED',
+  ifscCode: 'SBIN0032241',
+  branch: 'KPHB, HYDERABAD - 500072',
+  contactNumber: '7036951155',
+  accountType: 'Current Account'
+};

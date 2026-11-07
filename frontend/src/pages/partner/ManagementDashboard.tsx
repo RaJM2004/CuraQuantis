@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 import { PartnerStore } from '@/lib/partnerStore';
 import { AuthStore } from '@/lib/authStore';
 import { IndiaTerritoryMap } from '@/components/territory/IndiaTerritoryMap';
-import { PartnerApplication, ApplicationStatus, InvestorLead } from '@/types/partnerPortal';
+import { PartnerApplication, ApplicationStatus, InvestorLead, OFFICIAL_BANK_DETAILS } from '@/types/partnerPortal';
 import { buildMailtoUrl, CURAQUANTIS_SUPPORT_EMAIL } from '@/lib/emailNotification';
 import { DocumentVault } from '@/lib/documentStorage';
 import { 
@@ -43,7 +43,9 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCw,
-  Maximize2
+  Maximize2,
+  Landmark,
+  Copy
 } from 'lucide-react';
 
 export const ManagementDashboard: React.FC = () => {
@@ -91,6 +93,71 @@ export const ManagementDashboard: React.FC = () => {
   const [imgRotation, setImgRotation] = useState<number>(0);
   const [isRejectingDoc, setIsRejectingDoc] = useState<boolean>(false);
   const [docRejectReason, setDocRejectReason] = useState<string>('');
+
+  // Payment Manual Verification State
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState<boolean>(false);
+  const [isRejectingPayment, setIsRejectingPayment] = useState<boolean>(false);
+  const [paymentRejectReason, setPaymentRejectReason] = useState<string>('');
+  const [paymentActionFeedback, setPaymentActionFeedback] = useState<{ success: boolean; message: string } | null>(null);
+  const [copiedUtr, setCopiedUtr] = useState<boolean>(false);
+
+  const handleCopyUtr = (utr: string) => {
+    navigator.clipboard.writeText(utr);
+    setCopiedUtr(true);
+    setTimeout(() => setCopiedUtr(false), 2000);
+  };
+
+  const handleAdminVerifyPayment = (appId: string) => {
+    setIsVerifyingPayment(true);
+    setTimeout(() => {
+      const updated = PartnerStore.verifyPayment(appId, adminName);
+      if (updated) {
+        setSelectedApp({ ...updated });
+        loadData();
+        setPaymentActionFeedback({
+          success: true,
+          message: `Payment of ₹2,95,000 for ${updated.individual.fullName || updated.business.legalEntityName} manually verified in SBI A/C 45216693371. Invoice ${updated.paymentDetails?.invoiceNo} issued.`
+        });
+        setTimeout(() => setPaymentActionFeedback(null), 6000);
+      }
+      setIsVerifyingPayment(false);
+    }, 500);
+  };
+
+  const handleAdminRejectPayment = (appId: string) => {
+    if (!paymentRejectReason.trim()) {
+      alert('Please select or enter the discrepancy reason for flagging this payment.');
+      return;
+    }
+
+    const updated = PartnerStore.rejectPayment(appId, paymentRejectReason.trim(), adminName);
+    if (updated) {
+      setSelectedApp({ ...updated });
+      loadData();
+      setIsRejectingPayment(false);
+      setPaymentRejectReason('');
+      setPaymentActionFeedback({
+        success: false,
+        message: `Payment reference flagged as discrepancy. Applicant docket has been notified to re-submit proof.`
+      });
+      setTimeout(() => setPaymentActionFeedback(null), 6000);
+    }
+  };
+
+  const handlePreviewPaymentProof = () => {
+    if (!selectedApp?.paymentDetails?.paymentProofUrl) return;
+    setImgZoom(1);
+    setImgRotation(0);
+    setIsRejectingDoc(false);
+    setPreviewDoc({
+      id: 'payment-proof',
+      name: 'Bank Transfer Payment Advice / Receipt',
+      fileName: selectedApp.paymentDetails.paymentProofName || 'Payment_Proof.png',
+      fileDataUrl: selectedApp.paymentDetails.paymentProofUrl,
+      status: 'submitted',
+      uploadedAt: selectedApp.paymentDetails.submittedAt
+    });
+  };
 
   const handlePreviewDocument = async (doc: any) => {
     setLoadingDocId(doc.id);
@@ -327,7 +394,11 @@ export const ManagementDashboard: React.FC = () => {
 
   const filteredApps = applications.filter(app => {
     const matchesPathway = filterPathway === 'all' || app.pathway === filterPathway;
-    const matchesStatus = filterStatus === 'all' || app.status === filterStatus;
+    const matchesStatus = filterStatus === 'all' 
+      ? true 
+      : filterStatus === 'payment_submitted'
+        ? app.paymentStatus === 'submitted'
+        : app.status === filterStatus;
     const matchesSearch = app.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           app.individual.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (app.business.legalEntityName && app.business.legalEntityName.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -342,7 +413,8 @@ export const ManagementDashboard: React.FC = () => {
     regional: applications.filter(a => a.pathway === 'regional').length,
     franchise: applications.filter(a => a.pathway === 'franchise').length,
     pendingScrutiny: applications.filter(a => ['submitted', 'screening', 'due_diligence'].includes(a.status)).length,
-    approved: applications.filter(a => ['approved', 'partner_activated', 'payment_completed'].includes(a.status)).length
+    approved: applications.filter(a => ['approved', 'partner_activated', 'payment_completed'].includes(a.status)).length,
+    pendingPayment: applications.filter(a => a.paymentStatus === 'submitted').length
   };
 
   return (
@@ -420,6 +492,16 @@ export const ManagementDashboard: React.FC = () => {
                 <span className="text-slate-400 block text-[10px] uppercase font-bold">Approved Partners</span>
                 <span className="text-xl font-extrabold text-emerald-400">{stats.approved}</span>
               </div>
+              <div className={`p-3 rounded-xl border transition-all ${
+                stats.pendingPayment > 0 
+                  ? 'bg-amber-500/20 border-amber-400/50 text-amber-300' 
+                  : 'bg-white/5 border-white/10'
+              }`}>
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">SBI Payment Verification</span>
+                <span className={`text-xl font-extrabold ${stats.pendingPayment > 0 ? 'text-amber-300 animate-pulse' : 'text-slate-300'}`}>
+                  {stats.pendingPayment}
+                </span>
+              </div>
             </div>
 
             {/* Top Navigation Tabs */}
@@ -486,6 +568,7 @@ export const ManagementDashboard: React.FC = () => {
                       className="w-1/2 text-xs py-1.5 px-2 rounded-xl border border-slate-300 bg-white"
                     >
                       <option value="all">All Statuses</option>
+                      <option value="payment_submitted">💳 Payment Pending Verification ({stats.pendingPayment})</option>
                       <option value="submitted">Submitted</option>
                       <option value="screening">Screening</option>
                       <option value="due_diligence">Due Diligence</option>
@@ -531,6 +614,32 @@ export const ManagementDashboard: React.FC = () => {
                             {app.status.replace(/_/g, ' ')}
                           </span>
                         </div>
+
+                        {/* Payment Verification Badges */}
+                        {app.paymentStatus === 'submitted' && (
+                          <div className="mt-2.5 flex items-center gap-1.5 bg-amber-500/10 border border-amber-300 rounded-lg px-2.5 py-1 text-amber-900">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                            <span className="text-[10px] font-bold">
+                              ₹2.95L Bank Payment Pending Verification
+                            </span>
+                          </div>
+                        )}
+                        {app.paymentStatus === 'completed' && (
+                          <div className="mt-2.5 flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-0.5 text-emerald-800">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span className="text-[10px] font-medium">
+                              Fee Reconciled & Settled
+                            </span>
+                          </div>
+                        )}
+                        {app.paymentStatus === 'rejected' && (
+                          <div className="mt-2.5 flex items-center gap-1.5 bg-rose-50 border border-rose-200 rounded-lg px-2 py-0.5 text-rose-800">
+                            <AlertCircle className="w-3 h-3 text-rose-600" />
+                            <span className="text-[10px] font-medium">
+                              Payment Proof Flagged
+                            </span>
+                          </div>
+                        )}
 
                         <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
                           <span className="capitalize">{app.pathway.replace('-', ' ')}</span>
@@ -762,32 +871,318 @@ export const ManagementDashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* ₹2.5L Fee & Agreement Summary */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-4 border-t border-slate-100">
-                      <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200">
-                        <span className="font-bold text-blue-950 uppercase tracking-wider text-[10px] block mb-1">
-                          ₹2.5L Onboarding Status
-                        </span>
-                        <p className="text-sm font-extrabold text-blue-950 capitalize">
-                          {selectedApp.paymentStatus}
-                        </p>
-                        {selectedApp.paymentDetails && (
-                          <p className="text-[11px] text-slate-600 mt-1">
-                            Txn: {selectedApp.paymentDetails.transactionId}
-                          </p>
+                    {/* Feedback Toast if verification / rejection just happened */}
+                    {paymentActionFeedback && (
+                      <div className={`p-4 rounded-2xl border text-xs flex items-center gap-3 animate-fade-in ${
+                        paymentActionFeedback.success 
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                          : 'bg-rose-50 border-rose-200 text-rose-800'
+                      }`}>
+                        {paymentActionFeedback.success ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                        ) : (
+                          <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
                         )}
+                        <p className="font-medium">{paymentActionFeedback.message}</p>
+                      </div>
+                    )}
+
+                    {/* Official SBI Bank Transfer Verification & Reconciliation Panel */}
+                    <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-2 rounded-xl bg-blue-50 text-blue-900 border border-blue-100">
+                            <Landmark className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-extrabold text-sm text-slate-900">
+                              ₹2.5L Onboarding Fee Settlement (State Bank of India Manual Reconciliation)
+                            </h4>
+                            <p className="text-[11px] text-slate-500">
+                              Target Beneficiary: <strong>GENQUANTIS PRIVATE LIMITED</strong> • SBI A/C: <strong>45216693371</strong> (KPHB Branch)
+                            </p>
+                          </div>
+                        </div>
+
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 self-start sm:self-auto ${
+                          selectedApp.paymentStatus === 'completed'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : selectedApp.paymentStatus === 'submitted'
+                              ? 'bg-amber-100 text-amber-800 animate-pulse'
+                              : selectedApp.paymentStatus === 'rejected'
+                                ? 'bg-rose-100 text-rose-800'
+                                : 'bg-slate-100 text-slate-700'
+                        }`}>
+                          {selectedApp.paymentStatus === 'completed' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                          {selectedApp.paymentStatus === 'submitted' && <Clock className="w-3.5 h-3.5 text-amber-600" />}
+                          {selectedApp.paymentStatus === 'rejected' && <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />}
+                          {selectedApp.paymentStatus === 'completed'
+                            ? 'Settled & Verified ✓'
+                            : selectedApp.paymentStatus === 'submitted'
+                              ? 'Awaiting Manual Verification'
+                              : selectedApp.paymentStatus === 'rejected'
+                                ? 'Proof Flagged (Discrepancy)'
+                                : 'Payment Pending'}
+                        </span>
                       </div>
 
-                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                        <span className="font-bold text-slate-700 uppercase tracking-wider text-[10px] block mb-1">
-                          Agreement & Training
-                        </span>
-                        <p className="text-sm font-extrabold text-slate-900 capitalize">
-                          {selectedApp.trainingStatus?.replace(/_/g, ' ') || 'Pending'}
-                        </p>
-                        <p className="text-[11px] text-slate-500 mt-1">
-                          Contract: {selectedApp.agreementStatus || 'Drafting'}
-                        </p>
+                      {/* CASE A: APPLICANT SUBMITTED PAYMENT PROOF -> ADMIN VERIFICATION ACTION REQUIRED */}
+                      {selectedApp.paymentStatus === 'submitted' && (
+                        <div className="p-5 bg-gradient-to-br from-amber-50/70 via-blue-50/40 to-slate-50 rounded-2xl border border-amber-200/80 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wider">
+                              <AlertCircle className="w-4 h-4 text-amber-600" />
+                              <span>Manual Credit Scrutiny Required</span>
+                            </div>
+                            <span className="text-xs font-bold text-blue-900 bg-white px-2.5 py-0.5 rounded-full border border-blue-200">
+                              Payable: ₹2,95,000.00 (Incl. 18% GST)
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs bg-white p-4 rounded-xl border border-amber-200/60 shadow-sm">
+                            <div>
+                              <span className="text-slate-400 block text-[10px] uppercase font-bold">Reported UTR / Txn Ref</span>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="font-mono font-bold text-blue-950 text-xs">
+                                  {selectedApp.paymentDetails?.utrNumber || selectedApp.paymentDetails?.transactionId}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyUtr(selectedApp.paymentDetails?.utrNumber || selectedApp.paymentDetails?.transactionId || '')}
+                                  className="p-1 hover:bg-slate-100 rounded text-slate-500"
+                                  title="Copy UTR"
+                                >
+                                  {copiedUtr ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div>
+                              <span className="text-slate-400 block text-[10px] uppercase font-bold">Transfer Mode</span>
+                              <span className="font-semibold text-slate-900 mt-0.5 block">
+                                {selectedApp.paymentDetails?.paymentMode || 'NEFT/RTGS'}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-slate-400 block text-[10px] uppercase font-bold">Remitter / Depositor</span>
+                              <span className="font-semibold text-slate-900 mt-0.5 block truncate">
+                                {selectedApp.paymentDetails?.payerName || selectedApp.individual.fullName}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-slate-400 block text-[10px] uppercase font-bold">Remitting Bank</span>
+                              <span className="font-semibold text-slate-900 mt-0.5 block truncate">
+                                {selectedApp.paymentDetails?.payerBank || 'Not specified'}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-slate-400 block text-[10px] uppercase font-bold">Submitted At</span>
+                              <span className="text-slate-600 mt-0.5 block">
+                                {new Date(selectedApp.paymentDetails?.submittedAt || '').toLocaleString('en-IN')}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="text-slate-400 block text-[10px] uppercase font-bold">Receipt / Proof</span>
+                              {selectedApp.paymentDetails?.paymentProofUrl ? (
+                                <button
+                                  type="button"
+                                  onClick={handlePreviewPaymentProof}
+                                  className="text-blue-600 hover:text-blue-800 font-semibold underline text-xs mt-0.5 flex items-center gap-1"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  <span>View Receipt ({selectedApp.paymentDetails.paymentProofName || 'File'})</span>
+                                </button>
+                              ) : (
+                                <span className="text-slate-400 italic text-xs mt-0.5 block">None uploaded</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Verification Instructions Note */}
+                          <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-200 text-[11px] text-blue-900 space-y-1">
+                            <p className="font-bold">Reconciliation Checklist for Admin:</p>
+                            <p>1. Open SBI NetBanking / Corporate portal for A/C <strong>45216693371</strong>.</p>
+                            <p>2. Verify credit of <strong>₹2,95,000.00</strong> with narration matching UTR <strong>{selectedApp.paymentDetails?.utrNumber}</strong>.</p>
+                            <p>3. If credit is confirmed, click <strong>"Verify Payment Received ✓"</strong> to issue tax invoice and unlock applicant training.</p>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap items-center gap-3 pt-1">
+                            <button
+                              type="button"
+                              disabled={isVerifyingPayment}
+                              onClick={() => handleAdminVerifyPayment(selectedApp.id)}
+                              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50"
+                            >
+                              {isVerifyingPayment ? (
+                                <>
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Reconciling & Verifying...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Verify Payment Received (Confirm SBI Credit) ✓</span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setIsRejectingPayment(!isRejectingPayment)}
+                              className="px-4 py-2.5 rounded-xl bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 font-semibold text-xs transition-all flex items-center gap-1.5"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span>{isRejectingPayment ? 'Cancel Flag' : 'Flag Discrepancy / Reject Proof ✗'}</span>
+                            </button>
+                          </div>
+
+                          {/* Inline Rejection Drawer */}
+                          {isRejectingPayment && (
+                            <div className="p-4 bg-rose-50 rounded-xl border border-rose-200 space-y-3 mt-3 animate-fade-in">
+                              <span className="text-xs font-bold text-rose-900 block">
+                                Select or Enter Discrepancy Reason for Applicant:
+                              </span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {[
+                                  'UTR not found in SBI account statement',
+                                  'Amount credited is less than ₹2,95,000',
+                                  'Payer name does not match applicant profile',
+                                  'Payment proof receipt is illegible or blurred',
+                                  'Transaction reported as failed/reversed by bank'
+                                ].map((reason, idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setPaymentRejectReason(reason)}
+                                    className={`text-[10px] px-2.5 py-1 rounded-full border transition-all ${
+                                      paymentRejectReason === reason
+                                        ? 'bg-rose-600 text-white border-rose-600 font-bold'
+                                        : 'bg-white hover:bg-rose-100 text-rose-800 border-rose-200'
+                                    }`}
+                                  >
+                                    {reason}
+                                  </button>
+                                ))}
+                              </div>
+
+                              <textarea
+                                rows={2}
+                                value={paymentRejectReason}
+                                onChange={(e) => setPaymentRejectReason(e.target.value)}
+                                placeholder="Type custom discrepancy explanation for the applicant..."
+                                className="w-full p-2.5 text-xs rounded-xl border border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white"
+                              />
+
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setIsRejectingPayment(false)}
+                                  className="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAdminRejectPayment(selectedApp.id)}
+                                  className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm"
+                                >
+                                  Confirm Discrepancy & Notify Applicant
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* CASE B: PAYMENT SETTLED & VERIFIED */}
+                      {selectedApp.paymentStatus === 'completed' && (
+                        <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                              Payment Reconciled & Settled into SBI Account 45216693371
+                            </span>
+                            <span className="font-mono text-xs font-bold text-emerald-800 bg-white px-2.5 py-0.5 rounded border border-emerald-200">
+                              {selectedApp.paymentDetails?.invoiceNo}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-emerald-950 pt-1">
+                            <div>
+                              <span className="text-slate-500 block text-[10px]">Settled Amount:</span>
+                              <strong>₹2,95,000.00</strong>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 block text-[10px]">UTR / Txn Ref:</span>
+                              <strong className="font-mono">{selectedApp.paymentDetails?.utrNumber || selectedApp.paymentDetails?.transactionId}</strong>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 block text-[10px]">Verified By:</span>
+                              <strong>{selectedApp.paymentDetails?.verifiedBy || 'Finance Board'}</strong>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 block text-[10px]">Verified On:</span>
+                              <strong>{new Date(selectedApp.paymentDetails?.verifiedAt || selectedApp.paymentDetails?.paidAt || '').toLocaleDateString('en-IN')}</strong>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* CASE C: PAYMENT FLAGGED / REJECTED */}
+                      {selectedApp.paymentStatus === 'rejected' && (
+                        <div className="p-4 bg-rose-50 rounded-2xl border border-rose-200 space-y-2 text-xs">
+                          <div className="flex items-center gap-1.5 text-rose-900 font-bold">
+                            <AlertCircle className="w-4 h-4 text-rose-600" />
+                            <span>Payment Proof Flagged as Discrepancy</span>
+                          </div>
+                          <p className="text-rose-800">
+                            <strong>Reason:</strong> {selectedApp.paymentDetails?.adminNote || 'Transaction could not be verified in State Bank of India records.'}
+                          </p>
+                          <p className="text-slate-500 text-[11px]">
+                            Applicant has been notified on their dashboard to verify their transfer details and re-submit UTR.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* CASE D: PENDING SUBMISSION */}
+                      {(selectedApp.paymentStatus === 'pending' || selectedApp.paymentStatus === 'unbilled') && (
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                          <div className="space-y-0.5">
+                            <span className="font-bold text-slate-800">Awaiting Bank Transfer from Applicant</span>
+                            <p className="text-slate-500 text-[11px]">
+                              Applicant has been instructed to wire ₹2,95,000 to SBI A/C 45216693371 and submit their UTR.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleAdminVerifyPayment(selectedApp.id)}
+                            className="px-3.5 py-1.5 rounded-xl bg-slate-200 hover:bg-emerald-100 hover:text-emerald-800 text-slate-700 text-xs font-semibold transition-all self-start sm:self-auto border border-slate-300"
+                            title="Direct manual override if payment received offline"
+                          >
+                            Mark Paid Directly (Manual Override)
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Sub-card: Agreement & Training Status */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs border-t border-slate-100">
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                          <span className="text-[10px] uppercase font-bold text-slate-500 block">Training Curriculum</span>
+                          <span className="font-bold text-slate-900 capitalize block mt-0.5">
+                            {selectedApp.trainingStatus?.replace(/_/g, ' ') || 'Pending Payment'}
+                          </span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                          <span className="text-[10px] uppercase font-bold text-slate-500 block">Partnership Contract</span>
+                          <span className="font-bold text-slate-900 capitalize block mt-0.5">
+                            {selectedApp.agreementStatus || 'Drafting'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>

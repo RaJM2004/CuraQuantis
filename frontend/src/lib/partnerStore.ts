@@ -575,6 +575,7 @@ export const PartnerStore = {
       taxes: 45000,
       totalAmount: 295000,
       transactionId,
+      utrNumber: transactionId,
       paidAt: timestamp,
       invoiceNo: `CQ/INV/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`
     };
@@ -591,8 +592,123 @@ export const PartnerStore = {
       id: `log-${Date.now()}`,
       timestamp,
       action: 'Onboarding Fee Paid',
-      performedBy: 'Secure Payment Gateway (HDFC PG)',
-      details: `Settlement of ₹2,95,000 (Incl. 18% GST). Txn: ${transactionId}`
+      performedBy: 'Finance Directorate (SBI Manual Verification)',
+      details: `Settlement of ₹2,95,000 (Incl. 18% GST). Txn/UTR: ${transactionId}`
+    });
+
+    PartnerStore.saveApplication(app);
+    return app;
+  },
+
+  submitPaymentProof: (
+    appId: string, 
+    details: {
+      utrNumber: string;
+      paymentMode: string;
+      payerName: string;
+      payerBank?: string;
+      paymentProofUrl?: string;
+      paymentProofName?: string;
+    }
+  ): PartnerApplication | null => {
+    const app = PartnerStore.getApplicationById(appId);
+    if (!app) return null;
+
+    const timestamp = new Date().toISOString();
+    app.paymentStatus = 'submitted';
+    app.paymentDetails = {
+      ...(app.paymentDetails || {
+        amount: 250000,
+        taxes: 45000,
+        totalAmount: 295000,
+      }),
+      transactionId: details.utrNumber,
+      utrNumber: details.utrNumber,
+      paymentMode: details.paymentMode,
+      payerName: details.payerName,
+      payerBank: details.payerBank,
+      submittedAt: timestamp,
+      paymentProofUrl: details.paymentProofUrl,
+      paymentProofName: details.paymentProofName,
+      adminNote: undefined
+    };
+
+    app.statusTimeline.push({
+      status: 'payment_pending',
+      label: 'Onboarding Payment Submitted for Verification',
+      completedAt: timestamp,
+      note: `Bank transfer of ₹2,95,000 submitted via ${details.paymentMode}. UTR: ${details.utrNumber}. Verification pending by Finance Directorate.`
+    });
+
+    app.auditLogs.unshift({
+      id: `log-${Date.now()}`,
+      timestamp,
+      action: 'Payment Submitted by Applicant',
+      performedBy: details.payerName || app.individual.fullName || 'Applicant',
+      details: `Submitted payment UTR ${details.utrNumber} (${details.paymentMode}) for ₹2,95,000 into SBI A/C 45216693371.`
+    });
+
+    PartnerStore.saveApplication(app);
+    return app;
+  },
+
+  verifyPayment: (appId: string, adminName: string = 'Finance Directorate', note?: string): PartnerApplication | null => {
+    const app = PartnerStore.getApplicationById(appId);
+    if (!app) return null;
+
+    const timestamp = new Date().toISOString();
+    app.paymentStatus = 'completed';
+    const invoiceNo = `CQ/INV/${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`;
+
+    app.paymentDetails = {
+      ...(app.paymentDetails || {
+        amount: 250000,
+        taxes: 45000,
+        totalAmount: 295000,
+      }),
+      paidAt: timestamp,
+      verifiedAt: timestamp,
+      verifiedBy: adminName,
+      invoiceNo,
+      adminNote: note
+    };
+
+    app.status = 'payment_completed';
+    app.statusTimeline.push({
+      status: 'payment_completed',
+      label: '₹2.5L Onboarding Fee Verified & Settled',
+      completedAt: timestamp,
+      note: `Payment of ₹2,95,000 manually reconciled and verified in State Bank of India A/C 45216693371. Invoice: ${invoiceNo}.`
+    });
+
+    app.auditLogs.unshift({
+      id: `log-${Date.now()}`,
+      timestamp,
+      action: 'Payment Manually Verified by Admin',
+      performedBy: adminName,
+      details: `Reconciled ₹2,95,000 in SBI A/C 45216693371. UTR: ${app.paymentDetails.utrNumber || app.paymentDetails.transactionId}. Invoice: ${invoiceNo}.`
+    });
+
+    PartnerStore.saveApplication(app);
+    return app;
+  },
+
+  rejectPayment: (appId: string, reason: string, adminName: string = 'Finance Directorate'): PartnerApplication | null => {
+    const app = PartnerStore.getApplicationById(appId);
+    if (!app) return null;
+
+    const timestamp = new Date().toISOString();
+    app.paymentStatus = 'rejected';
+    if (app.paymentDetails) {
+      app.paymentDetails.adminNote = reason;
+    }
+
+    app.auditLogs.unshift({
+      id: `log-${Date.now()}`,
+      timestamp,
+      action: 'Payment Discrepancy Flagged',
+      performedBy: adminName,
+      details: `Payment reference rejected/flagged. Reason: ${reason}`
     });
 
     PartnerStore.saveApplication(app);
