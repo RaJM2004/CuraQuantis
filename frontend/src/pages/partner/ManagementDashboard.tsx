@@ -45,7 +45,8 @@ import {
   RotateCw,
   Maximize2,
   Landmark,
-  Copy
+  Copy,
+  ArrowLeft
 } from 'lucide-react';
 
 export const ManagementDashboard: React.FC = () => {
@@ -53,6 +54,9 @@ export const ManagementDashboard: React.FC = () => {
   const [applications, setApplications] = useState<PartnerApplication[]>([]);
   const [selectedApp, setSelectedApp] = useState<PartnerApplication | null>(null);
   const [leads, setLeads] = useState<InvestorLead[]>([]);
+  
+  // Mobile sub-tab switcher for applications view: 'list' | 'detail'
+  const [mobileSubTab, setMobileSubTab] = useState<'list' | 'detail'>('list');
   
   // Filters
   const [filterPathway, setFilterPathway] = useState<string>('all');
@@ -467,7 +471,7 @@ export const ManagementDashboard: React.FC = () => {
             </div>
 
             {/* Quick Metrics Bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-8 pt-6 border-t border-white/10 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2.5 mt-8 pt-6 border-t border-white/10 text-xs">
               <div className="p-3 bg-white/5 rounded-xl border border-white/10">
                 <span className="text-slate-400 block text-[10px] uppercase font-bold">Total Dockets</span>
                 <span className="text-xl font-extrabold text-white">{stats.total}</span>
@@ -481,7 +485,7 @@ export const ManagementDashboard: React.FC = () => {
                 <span className="text-xl font-extrabold text-cyan-300">{stats.regional}</span>
               </div>
               <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Franchise Investors</span>
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Franchise</span>
                 <span className="text-xl font-extrabold text-amber-300">{stats.franchise}</span>
               </div>
               <div className="p-3 bg-white/5 rounded-xl border border-white/10">
@@ -489,10 +493,10 @@ export const ManagementDashboard: React.FC = () => {
                 <span className="text-xl font-extrabold text-amber-400">{stats.pendingScrutiny}</span>
               </div>
               <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Approved Partners</span>
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Approved</span>
                 <span className="text-xl font-extrabold text-emerald-400">{stats.approved}</span>
               </div>
-              <div className={`p-3 rounded-xl border transition-all ${
+              <div className={`p-3 rounded-xl border transition-all col-span-2 sm:col-span-1 ${
                 stats.pendingPayment > 0 
                   ? 'bg-amber-500/20 border-amber-400/50 text-amber-300' 
                   : 'bg-white/5 border-white/10'
@@ -504,8 +508,8 @@ export const ManagementDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Top Navigation Tabs */}
-            <div className="flex flex-wrap items-center gap-2 mt-6 text-xs">
+            {/* Top Navigation Tabs - Horizontally scrollable on mobile */}
+            <div className="flex items-center gap-2 mt-6 text-xs overflow-x-auto pb-2 scrollbar-none sm:flex-wrap">
               {[
                 { id: 'applications', label: `Application Dockets (${filteredApps.length})`, icon: FileText },
                 { id: 'territory-map', label: 'National Territory Density', icon: MapPin },
@@ -518,9 +522,9 @@ export const ManagementDashboard: React.FC = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all ${
+                    className={`flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl font-semibold transition-all flex-shrink-0 whitespace-nowrap ${
                       isActive
-                        ? 'bg-white text-blue-950 shadow-md'
+                        ? 'bg-white text-blue-950 shadow-md font-bold'
                         : 'bg-white/10 hover:bg-white/20 text-white'
                     }`}
                   >
@@ -534,9 +538,40 @@ export const ManagementDashboard: React.FC = () => {
 
           {/* TAB 1: APPLICATIONS & SCRUTINY WORKFLOW */}
           {activeTab === 'applications' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Applications List (Left 5 Cols) */}
-              <div className="lg:col-span-5 space-y-4">
+            <div>
+              {/* Mobile Sub-Navigation Pill (Applications List vs Selected Docket Details) */}
+              <div className="lg:hidden flex items-center p-1 bg-slate-200/90 rounded-2xl mb-4 border border-slate-300 text-xs font-bold shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => setMobileSubTab('list')}
+                  className={`flex-1 py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                    mobileSubTab === 'list'
+                      ? 'bg-blue-600 text-white shadow-sm font-extrabold'
+                      : 'text-slate-700 hover:text-slate-900'
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Dockets List ({filteredApps.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileSubTab('detail')}
+                  className={`flex-1 py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                    mobileSubTab === 'detail'
+                      ? 'bg-blue-600 text-white shadow-sm font-extrabold'
+                      : 'text-slate-700 hover:text-slate-900'
+                  }`}
+                >
+                  <Eye className="w-4 h-4" />
+                  <span className="truncate">
+                    {selectedApp ? `Docket: ${selectedApp.id}` : 'Scrutiny Detail'}
+                  </span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Applications List (Left 5 Cols) */}
+                <div className={`lg:col-span-5 space-y-4 ${mobileSubTab === 'detail' ? 'hidden lg:block' : 'block'}`}>
                 {/* Search & Filter Bar */}
                 <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
                   <div className="relative">
@@ -586,7 +621,10 @@ export const ManagementDashboard: React.FC = () => {
                     return (
                       <div
                         key={app.id}
-                        onClick={() => setSelectedApp(app)}
+                        onClick={() => {
+                          setSelectedApp(app);
+                          setMobileSubTab('detail');
+                        }}
                         className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
                           isSelected
                             ? 'bg-blue-50/80 border-blue-400 ring-2 ring-blue-500/20 shadow-md'
@@ -654,13 +692,23 @@ export const ManagementDashboard: React.FC = () => {
               </div>
 
               {/* Scrutiny Detail Inspector (Right 7 Cols) */}
-              <div className="lg:col-span-7">
+              <div className={`lg:col-span-7 ${mobileSubTab === 'list' ? 'hidden lg:block' : 'block'}`}>
                 {selectedApp ? (
-                  <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+                  <div className="bg-white rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+                    {/* Mobile Back Button to return to list */}
+                    <button
+                      type="button"
+                      onClick={() => setMobileSubTab('list')}
+                      className="lg:hidden w-full px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-200 shadow-xs mb-2 transition-colors"
+                    >
+                      <ArrowLeft className="w-4 h-4 text-blue-600" />
+                      <span>← Back to Dockets List ({filteredApps.length} Applications)</span>
+                    </button>
+
                     {/* Top Scrutiny Action Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                    <div className="flex flex-col gap-4 border-b border-slate-100 pb-5">
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded">
                             {selectedApp.id}
                           </span>
@@ -668,13 +716,13 @@ export const ManagementDashboard: React.FC = () => {
                             Pathway: <strong>{selectedApp.pathway.replace('-', ' ')}</strong>
                           </span>
                         </div>
-                        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
+                        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1 break-words">
                           {selectedApp.business.legalEntityName || selectedApp.individual.fullName}
                         </h2>
                       </div>
 
-                      {/* Administrative Action Trigger */}
-                      <div className="flex items-center gap-2">
+                      {/* Administrative Action Trigger - Full wrap responsive */}
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
                           onClick={() => {
@@ -682,9 +730,10 @@ export const ManagementDashboard: React.FC = () => {
                             setActionNote('');
                             setIsActionModalOpen(true);
                           }}
-                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-colors"
+                          className="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-colors flex items-center justify-center gap-1.5 flex-1 sm:flex-initial text-center min-w-[125px]"
                         >
-                          Approve Partner
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Approve Partner</span>
                         </button>
                         <button
                           type="button"
@@ -693,9 +742,10 @@ export const ManagementDashboard: React.FC = () => {
                             setActionNote('');
                             setIsActionModalOpen(true);
                           }}
-                          className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-colors"
+                          className="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-colors flex items-center justify-center gap-1.5 flex-1 sm:flex-initial text-center min-w-[130px]"
                         >
-                          Request Clarification
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          <span>Clarification</span>
                         </button>
                         <button
                           type="button"
@@ -704,9 +754,10 @@ export const ManagementDashboard: React.FC = () => {
                             setActionNote('Executive Interview scheduled with Dr. Dharani on Sept 28, 2026 at 4:00 PM IST.');
                             setIsActionModalOpen(true);
                           }}
-                          className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold transition-colors"
+                          className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 flex-1 sm:flex-initial text-center min-w-[130px]"
                         >
-                          Schedule Interview
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>Interview</span>
                         </button>
                         <button
                           type="button"
@@ -715,13 +766,14 @@ export const ManagementDashboard: React.FC = () => {
                             setActionNote('');
                             setIsActionModalOpen(true);
                           }}
-                          className="px-3.5 py-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-semibold transition-colors"
+                          className="px-3.5 py-2.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 flex-1 sm:flex-initial text-center"
                         >
-                          Reject
+                          <X className="w-3.5 h-3.5" />
+                          <span>Reject</span>
                         </button>
                         <a
                           href={buildMailtoUrl(selectedApp)}
-                          className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                          className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 flex-1 sm:flex-initial text-center"
                           title={`Email complete application docket to ${CURAQUANTIS_SUPPORT_EMAIL}`}
                         >
                           <Mail className="w-3.5 h-3.5 text-blue-600" />
@@ -817,7 +869,7 @@ export const ManagementDashboard: React.FC = () => {
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
+                            <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/70 w-full sm:w-auto justify-between sm:justify-end">
                               {/* Status Badge */}
                               <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider ${
                                 doc.status === 'verified' 
@@ -829,42 +881,44 @@ export const ManagementDashboard: React.FC = () => {
                                 {doc.status}
                               </span>
 
-                              {/* Preview / View Document Button */}
-                              <button
-                                type="button"
-                                onClick={() => handlePreviewDocument(doc)}
-                                disabled={loadingDocId === doc.id}
-                                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-all"
-                                title="Click to open and inspect this document"
-                              >
-                                {loadingDocId === doc.id ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <Eye className="w-3.5 h-3.5" />
-                                )}
-                                <span>View Document</span>
-                              </button>
+                              <div className="flex items-center gap-2 flex-grow sm:flex-grow-0 justify-end">
+                                {/* Preview / View Document Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => handlePreviewDocument(doc)}
+                                  disabled={loadingDocId === doc.id}
+                                  className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                                  title="Click to open and inspect this document"
+                                >
+                                  {loadingDocId === doc.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Eye className="w-3.5 h-3.5" />
+                                  )}
+                                  <span>View Document</span>
+                                </button>
 
-                              {/* Quick Mark Verified Toggle */}
-                              {doc.status !== 'verified' ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleUpdateDocumentStatus(doc.id, 'verified')}
-                                  className="p-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors"
-                                  title="Approve / Mark Verified"
-                                >
-                                  <Check className="w-3.5 h-3.5" />
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleUpdateDocumentStatus(doc.id, 'pending')}
-                                  className="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors"
-                                  title="Mark as Pending Review"
-                                >
-                                  <AlertCircle className="w-3.5 h-3.5" />
-                                </button>
-                              )}
+                                {/* Quick Mark Verified Toggle */}
+                                {doc.status !== 'verified' ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateDocumentStatus(doc.id, 'verified')}
+                                    className="p-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors"
+                                    title="Approve / Mark Verified"
+                                  >
+                                    <Check className="w-3.5 h-3.5" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateDocumentStatus(doc.id, 'pending')}
+                                    className="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors"
+                                    title="Mark as Pending Review"
+                                  >
+                                    <AlertCircle className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -1010,13 +1064,13 @@ export const ManagementDashboard: React.FC = () => {
                             <p>3. If credit is confirmed, click <strong>"Verify Payment Received ✓"</strong> to issue tax invoice and unlock applicant training.</p>
                           </div>
 
-                          {/* Action Buttons */}
-                          <div className="flex flex-wrap items-center gap-3 pt-1">
+                          {/* Action Buttons - Stacked on Mobile */}
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-1">
                             <button
                               type="button"
                               disabled={isVerifyingPayment}
                               onClick={() => handleAdminVerifyPayment(selectedApp.id)}
-                              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50"
+                              className="w-full sm:w-auto justify-center px-4 sm:px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50 text-center"
                             >
                               {isVerifyingPayment ? (
                                 <>
@@ -1034,7 +1088,7 @@ export const ManagementDashboard: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setIsRejectingPayment(!isRejectingPayment)}
-                              className="px-4 py-2.5 rounded-xl bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 font-semibold text-xs transition-all flex items-center gap-1.5"
+                              className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 font-semibold text-xs transition-all flex items-center gap-1.5 text-center"
                             >
                               <XCircle className="w-3.5 h-3.5" />
                               <span>{isRejectingPayment ? 'Cancel Flag' : 'Flag Discrepancy / Reject Proof ✗'}</span>
@@ -1193,7 +1247,8 @@ export const ManagementDashboard: React.FC = () => {
                 )}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
           {/* TAB 2: TERRITORY DENSITY MAP */}
           {activeTab === 'territory-map' && (
@@ -1225,7 +1280,62 @@ export const ManagementDashboard: React.FC = () => {
                 </p>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Mobile Lead Cards (Visible on screens < md) */}
+              <div className="block md:hidden space-y-3">
+                {leads.map(lead => (
+                  <div key={lead.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 text-xs">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="font-mono text-xs font-bold text-blue-900 bg-blue-100 px-2 py-0.5 rounded">
+                          {lead.id}
+                        </span>
+                        <h4 className="font-bold text-sm text-slate-900 mt-1">{lead.investorName}</h4>
+                        {lead.entityName && <p className="text-slate-500 font-medium text-[11px]">{lead.entityName}</p>}
+                      </div>
+                      <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                        lead.status === 'approved' || lead.status === 'agreement_signed'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : lead.status === 'rejected'
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {lead.status.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 pt-2 border-t border-slate-200/60">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-semibold uppercase">Territory</span>
+                        <span className="font-medium text-slate-800">{lead.territory}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-semibold uppercase">Budget</span>
+                        <span className="font-bold text-emerald-700">{lead.investmentBudget}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-[10px] text-slate-400 block font-semibold uppercase">Introducing Partner</span>
+                        <span className="text-slate-700 font-medium">{lead.introducingPartnerName}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-[10px] text-slate-400 block font-semibold uppercase">Contact Details</span>
+                        <span className="text-slate-700">{lead.contactNumber} • {lead.email}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenLeadReview(lead)}
+                      className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Review Lead Dossier</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Lead Table (Visible on md and larger) */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
@@ -1818,13 +1928,13 @@ export const ManagementDashboard: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   {/* Document Approval / Reject Buttons */}
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => handleUpdateDocumentStatus(previewDoc.id, 'verified')}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
+                      className={`w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
                         previewDoc.status === 'verified'
                           ? 'bg-emerald-600 text-white shadow-emerald-500/20 ring-2 ring-emerald-400/40'
                           : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
@@ -1840,7 +1950,7 @@ export const ManagementDashboard: React.FC = () => {
                         setIsRejectingDoc(true);
                         setDocRejectReason(previewDoc.rejectionReason || 'Illegible or blurry scan / photo');
                       }}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
+                      className={`w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
                         previewDoc.status === 'rejected'
                           ? 'bg-rose-600 text-white shadow-rose-500/20 ring-2 ring-rose-400/40'
                           : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
@@ -1852,22 +1962,22 @@ export const ManagementDashboard: React.FC = () => {
                   </div>
 
                   {/* Download & Close Buttons */}
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-0 border-slate-100">
                     {previewDoc.fileDataUrl ? (
                       <a
                         href={previewDoc.fileDataUrl}
                         download={previewDoc.fileName}
-                        className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition-all"
+                        className="flex-1 sm:flex-initial justify-center px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition-all text-center"
                       >
                         <Download className="w-3.5 h-3.5" />
-                        <span>Download Original</span>
+                        <span>Download</span>
                       </a>
                     ) : null}
 
                     <button
                       type="button"
                       onClick={() => setPreviewDoc(null)}
-                      className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors"
+                      className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors text-center"
                     >
                       Close
                     </button>
