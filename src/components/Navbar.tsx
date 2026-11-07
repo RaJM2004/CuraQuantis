@@ -66,7 +66,6 @@ const Navbar = () => {
   const navItems = [
     { name: 'CuraVoice AI', href: '/insights' },
     { name: 'Demo Center', href: '/demo-center' },
-    { name: 'Partner & Investor Portal', href: '/partner-portal', isHighlight: true },
     { name: 'About', href: '/about' }
   ];
 
@@ -190,13 +189,8 @@ const Navbar = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className={
-                  item.isHighlight
-                    ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium text-xs shadow-sm whitespace-nowrap flex-shrink-0 transition-all transform hover:-translate-y-0.5"
-                    : "text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light whitespace-nowrap flex-shrink-0"
-                }
+                className="text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light whitespace-nowrap flex-shrink-0"
               >
-                {item.isHighlight && <span className="w-2 h-2 rounded-full bg-cyan-300 animate-pulse flex-shrink-0" />}
                 <span>{item.name}</span>
               </Link>
             ))}
@@ -208,18 +202,25 @@ const Navbar = () => {
             >
               Virtual Clinic Tour
             </a>
+            <Link
+              to="/partner-portal"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-medium text-xs shadow-sm whitespace-nowrap flex-shrink-0 transition-all transform hover:-translate-y-0.5"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse flex-shrink-0" />
+              <span>Partner & Investor Portal</span>
+            </Link>
             <Link 
               to="/portal/login" 
-              className={`font-medium text-xs px-3 py-1.5 rounded-full border whitespace-nowrap flex-shrink-0 transition-all ${
+              className={`font-semibold text-xs px-3.5 py-1.5 rounded-full border whitespace-nowrap flex-shrink-0 transition-all ${
                 location.pathname === '/portal/login'
-                  ? 'bg-blue-50 text-blue-700 border-blue-400 font-semibold shadow-xs'
-                  : 'text-gray-700 hover:text-blue-600 border-gray-200 hover:border-blue-400'
+                  ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                  : 'text-orange-600 hover:text-white border-orange-400 hover:bg-orange-500 hover:border-orange-500'
               }`}
             >
               Portal Sign In
             </Link>
             <Link to="/contact" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full transition-all duration-300 text-xs xl:text-sm font-medium whitespace-nowrap flex-shrink-0 shadow-sm">
-              Get Started
+              Contact Us
             </Link>
           </div>
 
@@ -304,11 +305,7 @@ const Navbar = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className={
-                  item.isHighlight
-                    ? "block py-3 px-4 my-2 text-center rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-sm shadow-md"
-                    : "block py-3 text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
-                }
+                className="block py-3 text-gray-900 hover:text-blue-600 transition-colors duration-300 font-light"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {item.name}
@@ -323,15 +320,22 @@ const Navbar = () => {
             >
               Virtual Clinic Tour (360°)
             </a>
+            <Link
+              to="/partner-portal"
+              className="block py-3 px-4 my-2 text-center rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold text-sm shadow-md"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Partner & Investor Portal
+            </Link>
             <Link 
               to="/portal/login" 
-              className="block py-3 px-4 my-2 text-center rounded-xl border border-slate-200 text-slate-800 font-semibold text-sm hover:border-blue-500 hover:text-blue-600 transition-colors"
+              className="block py-3 px-4 my-2 text-center rounded-xl border border-orange-400 text-orange-600 hover:bg-orange-500 hover:text-white font-semibold text-sm transition-colors"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Partner & Admin Portal Sign In
             </Link>
-            <Link to="/contact" className="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full mt-2 transition-all duration-300 font-light block text-center">
-              Get Started
+            <Link to="/contact" className="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full mt-2 transition-all duration-300 font-medium block text-center" onClick={() => setIsMobileMenuOpen(false)}>
+              Contact Us
             </Link>
           </div>
         )}

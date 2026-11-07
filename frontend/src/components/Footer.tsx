@@ -100,7 +100,8 @@ const Footer = () => {
 
         <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-blue-100">
           <div className="minimal-text mb-4 md:mb-0 text-sm">
-            ©2026 CuraQuantis Health Clinics Pvt Ltd. All rights reserved. | A Subsidiary of GENQUANTIS PVT. LTD. (Holding Company)
+            ©Content Owned By CuraQuantis | Site, Partner & Investor Portal Maintained By GENQUANTIS PRIVATE LIMITED.
+            Last updated on: 07/11/2026
           </div>
 
           <div className="flex items-center space-x-4">
