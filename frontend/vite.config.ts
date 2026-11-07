@@ -10,9 +10,9 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://curaquantis-h4c8gucpbee7aege.westus3-01.azurewebsites.net',
         changeOrigin: true,
-        secure: false,
+        secure: true,
       },
     },
   },
