@@ -41,8 +41,11 @@ function getOutlookTransporter() {
   });
 }
 
-// Middleware
-app.use(cors({ origin: CORS_ORIGIN }));
+// Middleware - Allow incoming origins including localhost and Azure static web apps
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 

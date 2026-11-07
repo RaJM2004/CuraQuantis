@@ -5,11 +5,14 @@ const STORAGE_KEY_LEADS = 'curaquantis_investor_leads_v1';
 
 // Base API URL configuration
 const getApiBaseUrl = (): string => {
+  // When running locally in browser, ALWAYS use relative path so requests route through Vite dev proxy without CORS blocking
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return '';
+  }
   const envUrl = (import.meta as any).env?.VITE_API_URL;
   if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
     return envUrl.trim().replace(/\/$/, '');
   }
-  // When empty or on localhost, use relative path to route through Vite proxy
   return '';
 };
 

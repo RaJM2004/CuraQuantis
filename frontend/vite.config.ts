@@ -12,7 +12,10 @@ export default defineConfig(({ mode }) => ({
       '/api': {
         target: 'https://curaquantis-h4c8gucpbee7aege.westus3-01.azurewebsites.net',
         changeOrigin: true,
-        secure: true,
+        secure: false,
+        headers: {
+          Origin: 'https://agreeable-field-05acfd710.6.azurestaticapps.net',
+        },
       },
     },
   },
