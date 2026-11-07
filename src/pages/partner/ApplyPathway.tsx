@@ -664,10 +664,39 @@ export const ApplyPathway: React.FC = () => {
           ) : (
             <div>
               {/* Stepper Wizard Bar */}
-              <div className="mb-10 bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              <div className="mb-8 bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-sm border border-slate-200">
+                {/* Active Step Progress Summary on Mobile & Tablet */}
+                <div className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-6 h-6 rounded-lg bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 shadow-xs">
+                      {currentStep}
+                    </span>
+                    <div className="min-w-0">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider leading-none">
+                        Section 0{currentStep} of 0{steps.length}
+                      </span>
+                      <p className="text-xs sm:text-sm font-extrabold text-slate-900 truncate mt-0.5">
+                        {steps[currentStep - 1]?.label}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200/80 flex-shrink-0">
+                    {Math.round((currentStep / steps.length) * 100)}% Complete
+                  </span>
+                </div>
+
+                {/* Visual Progress Bar */}
+                <div className="w-full bg-slate-100 rounded-full h-1.5 mb-3.5 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 h-1.5 rounded-full transition-all duration-300"
+                    style={{ width: `${(currentStep / steps.length) * 100}%` }}
+                  />
+                </div>
+
+                {/* 6 Step Cards with FULL TEXT ALWAYS VISIBLE ON ALL SCREENS */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
                   {steps.map((s) => {
-                    const Icon = s.icon;
                     const isActive = currentStep === s.number;
                     const isDone = currentStep > s.number;
                     return (
@@ -675,21 +704,34 @@ export const ApplyPathway: React.FC = () => {
                         key={s.number}
                         type="button"
                         onClick={() => setCurrentStep(s.number)}
-                        className={`flex items-center gap-3 p-2.5 rounded-xl transition-all text-left ${
+                        className={`flex items-start sm:items-center gap-2 p-2 sm:p-2.5 rounded-xl transition-all text-left min-w-0 min-h-[50px] ${
                           isActive
-                            ? 'bg-blue-600 text-white shadow-md'
+                            ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-500/20'
                             : isDone
-                            ? 'bg-blue-50 text-blue-900 border border-blue-200'
-                            : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                            ? 'bg-blue-50 text-blue-900 border border-blue-200 hover:bg-blue-100/70'
+                            : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/70'
                         }`}
                       >
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
-                          isActive ? 'bg-white/20 text-white' : isDone ? 'bg-blue-200 text-blue-900' : 'bg-slate-200 text-slate-700'
+                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 sm:mt-0 ${
+                          isActive
+                            ? 'bg-white/25 text-white'
+                            : isDone
+                            ? 'bg-blue-200 text-blue-900 font-extrabold'
+                            : 'bg-slate-200 text-slate-700'
                         }`}>
                           {isDone ? '✓' : s.number}
                         </div>
-                        <div className="hidden lg:block">
-                          <p className="text-[11px] font-bold leading-tight truncate">{s.label}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-[10px] sm:text-[11px] font-bold leading-tight break-words line-clamp-2 ${
+                            isActive ? 'text-white' : isDone ? 'text-blue-950' : 'text-slate-800'
+                          }`}>
+                            {s.label}
+                          </p>
+                          <span className={`text-[9px] block uppercase font-medium mt-0.5 ${
+                            isActive ? 'text-white/80' : isDone ? 'text-blue-600 font-semibold' : 'text-slate-400'
+                          }`}>
+                            {isDone ? 'Done' : `Step 0${s.number}`}
+                          </span>
                         </div>
                       </button>
                     );
@@ -1710,10 +1752,10 @@ export const ApplyPathway: React.FC = () => {
                     </div>
 
                     {/* Submission CTA Alert */}
-                    <div className="p-6 bg-gradient-to-r from-blue-900 to-indigo-900 rounded-2xl text-white flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div className="p-5 sm:p-6 bg-gradient-to-r from-blue-900 to-indigo-900 rounded-2xl text-white flex flex-col md:flex-row items-stretch md:items-center justify-between gap-5">
                       <div className="space-y-1">
-                        <h4 className="text-lg font-bold">Ready to Dispatch for Scrutiny?</h4>
-                        <p className="text-xs text-slate-300 font-light max-w-lg">
+                        <h4 className="text-base sm:text-lg font-bold">Ready to Dispatch for Scrutiny?</h4>
+                        <p className="text-xs text-slate-300 font-light max-w-lg leading-relaxed">
                           By clicking submit, your complete application docket is encrypted and dispatched directly to <strong>{CURAQUANTIS_SUPPORT_EMAIL}</strong> and recorded in the CuraQuantis™ Scrutiny Board registry. A unique Reference ID (CQ-2026-XXXXXX) will be generated.
                         </p>
                       </div>
@@ -1721,7 +1763,7 @@ export const ApplyPathway: React.FC = () => {
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-bold text-sm shadow-xl shadow-cyan-500/25 transition-all flex items-center gap-2 flex-shrink-0 disabled:opacity-60 cursor-pointer"
+                        className="w-full md:w-auto px-6 sm:px-8 py-3.5 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-bold text-xs sm:text-sm shadow-xl shadow-cyan-500/25 transition-all flex items-center justify-center gap-2 flex-shrink-0 disabled:opacity-60 cursor-pointer text-center"
                       >
                         {isSubmitting ? (
                           <>
@@ -1740,23 +1782,23 @@ export const ApplyPathway: React.FC = () => {
                 )}
 
                 {/* Bottom Navigation Buttons */}
-                <div className="flex items-center justify-between pt-4">
+                <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-slate-200">
                   {currentStep > 1 ? (
                     <button
                       type="button"
                       onClick={() => setCurrentStep(prev => prev - 1)}
-                      className="px-6 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-2 transition-colors"
+                      className="w-full sm:w-auto px-5 py-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-xs"
                     >
                       <ArrowLeft className="w-4 h-4" />
                       <span>Back: {steps[currentStep - 2].label}</span>
                     </button>
-                  ) : <div />}
+                  ) : <div className="hidden sm:block" />}
 
                   {currentStep < 6 && (
                     <button
                       type="button"
                       onClick={() => setCurrentStep(prev => prev + 1)}
-                      className="px-8 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-2 transition-all shadow-md"
+                      className="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md"
                     >
                       <span>Proceed to {steps[currentStep].label}</span>
                       <ArrowRight className="w-4 h-4" />
