@@ -5,7 +5,7 @@ import { PartnerApplication } from '@/types/partnerPortal';
 export const CURAQUANTIS_SUPPORT_EMAIL = 'support@curaquantis.com';
 
 // EmailJS credentials configured in the project
-const EMAILJS_SERVICE_ID = 'service_dnsi8mn';
+const EMAILJS_SERVICE_ID = 'service_44qhlxn';
 const EMAILJS_TEMPLATE_ID = 'template_mx5w5r8';
 const EMAILJS_PUBLIC_KEY = '32yZnVZ4OgNOo6tGM';
 

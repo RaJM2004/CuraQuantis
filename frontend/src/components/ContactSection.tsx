@@ -26,7 +26,7 @@ const ContactSection = () => {
 
     try {
       const result = await emailjs.send(
-        'service_dnsi8mn',
+        'service_44qhlxn',
         'template_mx5w5r8',
         {
           from_name: formData.name,
