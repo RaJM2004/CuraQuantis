@@ -448,7 +448,7 @@ export const ApplyPathway: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-slate-500">
               <Link to="/" className="hover:text-blue-600 transition-colors">Home</Link>
               <span>/</span>
-              <Link to="/partner-portal" className="hover:text-blue-600 transition-colors">Partner & Investor Portal</Link>
+              <a href="https://partner.genquantis.com/" className="hover:text-blue-600 transition-colors">Partner & Investor Portal</a>
               <span>/</span>
               <span className="text-slate-800 font-medium">Application Pathway</span>
             </div>
@@ -653,12 +653,12 @@ export const ApplyPathway: React.FC = () => {
                   <span>Open Your Applicant Dashboard</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-                <Link
-                  to="/partner-portal"
+                <a
+                  href="https://partner.genquantis.com/"
                   className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors text-center"
                 >
                   Return to Portal Home
-                </Link>
+                </a>
               </div>
             </div>
           ) : (

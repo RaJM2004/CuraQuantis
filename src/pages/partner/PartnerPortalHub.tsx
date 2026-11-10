@@ -164,20 +164,20 @@ export const PartnerPortalHub: React.FC = () => {
                   <span>Select Application Pathway</span>
                   <ArrowRight className="w-4 h-4" />
                 </a>
-                <Link
-                  to="/portal/login"
+                <a
+                  href="https://partner.genquantis.com/portal/login"
                   className="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/20 transition-colors flex items-center gap-2"
                 >
                   <Users className="w-4 h-4 text-cyan-300" />
                   <span>Partner Portal Login</span>
-                </Link>
-                <Link
-                  to="/portal/login?tab=admin"
+                </a>
+                <a
+                  href="https://partner.genquantis.com/portal/login?tab=admin"
                   className="px-5 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white font-medium text-xs border border-slate-700 transition-colors flex items-center gap-2"
                 >
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
                   <span>CuraQuantis™ Scrutiny Board</span>
-                </Link>
+                </a>
               </div>
             </div>
 
@@ -298,13 +298,13 @@ export const PartnerPortalHub: React.FC = () => {
 
                 {/* CTA Button */}
                 <div className="p-6 pt-0">
-                  <Link
-                    to={`/apply/${p.id}`}
+                  <a
+                    href={`https://partner.genquantis.com/apply/${p.id}`}
                     className="w-full py-3.5 px-4 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-md group-hover:bg-blue-600"
                   >
                     <span>{p.cta}</span>
                     <ArrowRight className="w-4 h-4" />
-                  </Link>
+                  </a>
                 </div>
               </div>
             ))}
@@ -417,12 +417,12 @@ export const PartnerPortalHub: React.FC = () => {
                 </p>
               </div>
             </div>
-            <Link
-              to="/apply/regional"
+            <a
+              href="https://partner.genquantis.com/apply/regional"
               className="px-6 py-3 rounded-xl bg-white text-blue-900 hover:bg-blue-50 font-bold text-xs whitespace-nowrap shadow-md transition-colors"
             >
               Launch Field Application Mode
-            </Link>
+            </a>
           </div>
         </section>
       </main>

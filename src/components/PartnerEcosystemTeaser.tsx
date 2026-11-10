@@ -81,21 +81,21 @@ export const PartnerEcosystemTeaser: React.FC = () => {
               Our field work has started nationwide. We invite visionary Channel Partners, Regional Leaders, and Franchise Investors to build India’s premier AI-powered clinical diagnostics network.
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <Link
-                to="/partner-portal"
+              <a
+                href="https://partner.genquantis.com/"
                 className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400 hover:text-cyan-300 transition-colors"
               >
                 <span>Explore Portal Hub & Track</span>
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </a>
               <span className="text-slate-500">•</span>
-              <Link
-                to="/portal/login"
+              <a
+                href="https://partner.genquantis.com/portal/login"
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-cyan-300 transition-colors"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Portal Sign In</span>
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -147,13 +147,13 @@ export const PartnerEcosystemTeaser: React.FC = () => {
 
               {/* CTA Button */}
               <div className="p-6 pt-0 bg-white">
-                <Link
-                  to={`/apply/${p.id}`}
+                <a
+                  href={`https://partner.genquantis.com/apply/${p.id}`}
                   className="w-full py-3.5 px-4 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-md group-hover:bg-blue-600"
                 >
                   <span>{p.cta}</span>
                   <ArrowRight className="w-4 h-4" />
-                </Link>
+                </a>
               </div>
             </div>
           ))}
@@ -169,19 +169,19 @@ export const PartnerEcosystemTeaser: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Link
-              to="/portal/login"
+            <a
+              href="https://partner.genquantis.com/portal/login"
               className="px-4 py-2 rounded-xl border border-white/20 hover:border-cyan-400 text-white font-medium whitespace-nowrap hover:bg-white/10 transition-colors flex items-center gap-2"
             >
               <LogIn className="w-3.5 h-3.5 text-cyan-300" />
               <span>Portal Sign In</span>
-            </Link>
-            <Link
-              to="/partner-portal"
+            </a>
+            <a
+              href="https://partner.genquantis.com/"
               className="px-5 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold whitespace-nowrap shadow-md transition-colors"
             >
               Open National Portal
-            </Link>
+            </a>
           </div>
         </div>
       </div>

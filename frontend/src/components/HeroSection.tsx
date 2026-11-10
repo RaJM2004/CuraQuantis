@@ -60,43 +60,43 @@ const HeroSection = () => {
             >
               Explore Solutions
             </Link>
-            <Link
-              to="/partner-portal"
+            <a
+              href="https://partner.genquantis.com/"
               className="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 hover:shadow-xl hover:shadow-indigo-300/50 text-white px-8 py-4 rounded-full text-base font-bold transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2"
             >
               <Building2 className="w-5 h-5 text-cyan-200" />
               <span>Partner & Franchise Portal</span>
-            </Link>
-            <Link
-              to="/portal/login"
+            </a>
+            <a
+              href="https://partner.genquantis.com/portal/login"
               className="medical-glass border-2 border-blue-200 text-blue-800 hover:bg-blue-50/80 px-7 py-4 rounded-full text-base font-semibold transition-all duration-300 flex items-center gap-2 hover:-translate-y-0.5"
             >
               <LogIn className="w-5 h-5 text-blue-600" />
               <span>Portal Sign In</span>
-            </Link>
+            </a>
           </div>
 
           {/* Quick Direct Application Pathways */}
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-14 fade-in stagger-3 text-xs">
             <span className="text-blue-900/60 font-semibold uppercase tracking-wider text-[11px]">Direct Apply:</span>
-            <Link
-              to="/apply/pan-india"
+            <a
+              href="https://partner.genquantis.com/apply/pan-india"
               className="px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-blue-50 border border-blue-200 text-blue-900 font-medium shadow-xs transition-colors"
             >
               Pan-India Master Partner →
-            </Link>
-            <Link
-              to="/apply/regional"
+            </a>
+            <a
+              href="https://partner.genquantis.com/apply/regional"
               className="px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-blue-50 border border-blue-200 text-blue-900 font-medium shadow-xs transition-colors"
             >
               Regional State Partner →
-            </Link>
-            <Link
-              to="/apply/franchise"
+            </a>
+            <a
+              href="https://partner.genquantis.com/apply/franchise"
               className="px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-blue-50 border border-blue-200 text-blue-900 font-medium shadow-xs transition-colors"
             >
               Smart Clinic Franchise →
-            </Link>
+            </a>
           </div>
 
           <div className="fade-in stagger-4">

@@ -41,8 +41,11 @@ function getOutlookTransporter() {
   });
 }
 
-// Universal CORS Middleware for curaquantis.com, www.curaquantis.com, azurestaticapps.net, and local dev
+// Universal CORS Middleware for partner.genquantis.com, curaquantis.com, and local dev
 const ALLOWED_ORIGINS = [
+  'https://partner.genquantis.com',
+  'https://genquantis.com',
+  'https://www.genquantis.com',
   'https://curaquantis.com',
   'https://www.curaquantis.com',
   'https://agreeable-field-05acfd710.6.azurestaticapps.net',
@@ -58,6 +61,7 @@ app.use((req, res, next) => {
   if (origin) {
     const isAllowed = 
       ALLOWED_ORIGINS.includes(origin) ||
+      /^https?:\/\/([a-z0-9-]+\.)?genquantis\.com$/i.test(origin) ||
       /^https?:\/\/([a-z0-9-]+\.)?curaquantis\.com$/i.test(origin) ||
       /^https?:\/\/([a-z0-9-]+\.)?azurestaticapps\.net$/i.test(origin) ||
       /^https?:\/\/localhost(:\d+)?$/i.test(origin) ||

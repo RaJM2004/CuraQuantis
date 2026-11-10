@@ -22,6 +22,8 @@ const Footer = () => {
     ],
     'Company': [
       { name: 'About Us', path: '/about' },
+      { name: 'Partner & Investor Portal', path: 'https://partner.genquantis.com/', isExternal: true },
+      { name: 'Portal Sign In', path: 'https://partner.genquantis.com/portal/login', isExternal: true },
       { name: 'Insights', path: '/insights' },
       { name: 'Academy', path: 'https://academy.genquantaa.com/course/curaquantis-course', isExternal: true },
       { name: 'Contact', path: '/contact' }
